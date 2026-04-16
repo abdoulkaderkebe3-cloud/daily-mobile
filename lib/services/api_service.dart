@@ -1,15 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:http/browser_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ApiService {
   static const String baseUrl = 'https://daily-muse-letb.onrender.com';
 
-  static final http.Client _client = kIsWeb 
-      ? (BrowserClient()..withCredentials = true) 
-      : http.Client();
+  static final http.Client _client = http.Client();
 
   static Future<Map<String, String>> _getHeaders() async {
     return {

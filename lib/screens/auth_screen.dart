@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
@@ -272,7 +271,7 @@ class AuthScreenState extends State<AuthScreen> {
                     ),
                     child: Row(
                       children: [
-                        Icon(PhosphorIcons.warningCircle(), color: Color(0xFFEF4444), size: 18),
+                        Icon(PhosphorIcons.warningCircle(), color: const Color(0xFFEF4444), size: 18),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
@@ -295,7 +294,7 @@ class AuthScreenState extends State<AuthScreen> {
                     ),
                     child: Row(
                       children: [
-                        Icon(PhosphorIcons.checkCircle(), color: Color(0xFF10B981), size: 18),
+                        Icon(PhosphorIcons.checkCircle(), color: const Color(0xFF10B981), size: 18),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(

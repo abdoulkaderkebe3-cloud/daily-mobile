@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'etats_question/etat_actif.dart';
 import 'etats_question/etat_succes.dart';
