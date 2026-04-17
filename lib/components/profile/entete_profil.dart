@@ -5,6 +5,7 @@ import '../../services/api_service.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:image_picker/image_picker.dart';
 
 class EnteteProfil extends StatefulWidget {
   final bool modeEdition;
@@ -55,13 +56,37 @@ class EnteteProfilState extends State<EnteteProfil> {
     }
   }
 
+  Future<void> _gererChangementPhoto() async {
+    final picker = ImagePicker();
+    final image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+    
+    if (image == null) return;
+
+    final provider = context.read<AppProvider>();
+    final id = provider.donneesUtilisateur?['id'];
+    if (id == null) return;
+
+    try {
+      final res = await ApiService.mettreAJourPhotoProfil(id.toString(), image.path);
+      if (res['user'] != null) {
+        provider.setDonneesUtilisateur({...provider.donneesUtilisateur!, ...res['user']});
+      } else {
+        // Fallback or full refresh
+        provider.setDonneesUtilisateur({...provider.donneesUtilisateur!, 'photoProfil': res['photoProfil'] ?? res['user']?['photoProfil']});
+      }
+      provider.afficherNotification("Photo mise à jour !", type: "succes");
+    } catch (err) {
+      provider.afficherNotification("Erreur lors de l'envoi", type: "erreur");
+    }
+  }
+
   Future<void> _gererSupprimerPhoto() async {
     final provider = context.read<AppProvider>();
     final id = provider.donneesUtilisateur?['id'];
     if (id == null) return;
 
     try {
-      await ApiService.supprimerUtilisateur(id.toString());
+      await ApiService.supprimerPhotoProfil(id.toString());
       final u = Map<String, dynamic>.from(provider.donneesUtilisateur!);
       u['photoProfil'] = null;
       provider.setDonneesUtilisateur(u);
@@ -80,7 +105,7 @@ class EnteteProfilState extends State<EnteteProfil> {
     final pseudo = user?['username'] ?? "Utilisateur";
     final points = user?['total_score'] ?? 0;
     final rang = user?['rang'] ?? "N/A";
-    final avatarUrl = user?['photoProfil'] ?? "https://api.dicebear.com/7.x/notionists/svg?seed=$pseudo";
+    final avatarUrl = user?['photoProfil'];
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -113,13 +138,13 @@ class EnteteProfilState extends State<EnteteProfil> {
           const SizedBox(height: 10),
 
           GestureDetector(
-            onTap: () {
-              if (widget.modeEdition) {
-                // Trigger file picker
-              } else {
-                provider.setImageZoomee(avatarUrl);
-              }
-            },
+              onTap: () {
+                if (widget.modeEdition) {
+                  _gererChangementPhoto();
+                } else if (avatarUrl != null && avatarUrl.isNotEmpty && avatarUrl.startsWith('http')) {
+                  provider.setImageZoomee(avatarUrl);
+                }
+              },
             child: Stack(
               children: [
                 Container(
@@ -130,8 +155,13 @@ class EnteteProfilState extends State<EnteteProfil> {
                   ),
                   child: CircleAvatar(
                     radius: 50,
-                    backgroundImage: NetworkImage(avatarUrl),
+                    backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty && avatarUrl.startsWith('http')) 
+                      ? NetworkImage(avatarUrl) 
+                      : null,
                     backgroundColor: theme.brightness == Brightness.light ? const Color(0xFFF4F4F5) : const Color(0xFF27272A),
+                    child: (avatarUrl == null || avatarUrl.isEmpty || !avatarUrl.startsWith('http')) 
+                      ? Icon(PhosphorIcons.user(), size: 40, color: theme.textTheme.bodyMedium?.color?.withOpacity(0.3))
+                      : null,
                   ),
                 ),
                 if (widget.modeEdition)
@@ -224,7 +254,7 @@ class EnteteProfilState extends State<EnteteProfil> {
             ),
           ),
           
-          if (widget.modeEdition && user?['photoProfil'] != null)
+          if (widget.modeEdition && (avatarUrl != null && avatarUrl.isNotEmpty))
             Padding(
               padding: const EdgeInsets.only(top: 24),
               child: TextButton.icon(
@@ -243,13 +273,13 @@ class EnteteProfilState extends State<EnteteProfil> {
     Widget valueWidget;
     
     if (isRank) {
-      final cleanValue = value.replaceAll('#', '');
-      if (cleanValue == "1") {
-        valueWidget = SvgPicture.asset('assets/images/svg-1er.svg', width: 24, height: 24);
-      } else if (cleanValue == "2") {
-        valueWidget = SvgPicture.asset('assets/images/svg-2eme.svg', width: 24, height: 24);
-      } else if (cleanValue == "3") {
-        valueWidget = SvgPicture.asset('assets/images/svg-3eme.svg', width: 24, height: 24);
+      final cleanValue = value.toString().replaceAll('#', '').toLowerCase().trim();
+      if (cleanValue == "1" || cleanValue.startsWith("1")) {
+        valueWidget = Image.asset('assets/images/svg-1er.png', width: 32, height: 32);
+      } else if (cleanValue == "2" || cleanValue.startsWith("2")) {
+        valueWidget = Image.asset('assets/images/svg-2eme.png', width: 32, height: 32);
+      } else if (cleanValue == "3" || cleanValue.startsWith("3")) {
+        valueWidget = Image.asset('assets/images/svg-3eme.png', width: 32, height: 32);
       } else {
         valueWidget = Text(
           value, 

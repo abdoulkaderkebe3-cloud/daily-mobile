@@ -27,14 +27,19 @@ class ProfileViewState extends State<ProfileView> {
 
   Future<void> _refreshStats() async {
     final provider = context.read<AppProvider>();
-    final userId = provider.donneesUtilisateur?['id'];
+    final userData = provider.donneesUtilisateur;
+    final userId = userData?['id'];
     if (userId == null) return;
 
     try {
       final stats = await ApiService.obtenirStatsUtilisateur(userId.toString());
-      provider.setDonneesUtilisateur({...provider.donneesUtilisateur!, ...stats});
-    } catch (_) {
-      // Refresh error
+      if (stats is Map<String, dynamic>) {
+        final updatedData = Map<String, dynamic>.from(userData ?? {});
+        updatedData.addAll(stats);
+        provider.setDonneesUtilisateur(updatedData);
+      }
+    } catch (err) {
+      debugPrint("Erreur refresh stats: $err");
     }
   }
 

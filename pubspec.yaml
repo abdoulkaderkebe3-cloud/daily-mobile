@@ -32,6 +32,8 @@ dependencies:
   
   # Fonts
   google_fonts: ^6.1.0
+  image_picker: ^1.2.1
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:
@@ -46,7 +48,7 @@ flutter_launcher_icons:
   image_path: "assets/images/icon.png"
 
 flutter:
-  uses-material-design: true
+  uses-material-design: false
 
   assets:
     - assets/images/

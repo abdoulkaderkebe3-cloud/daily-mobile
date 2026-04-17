@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../translations/translations.dart';
+import '../services/api_service.dart';
 
 class NotificationData {
   final bool visible;
@@ -20,6 +22,14 @@ class AppProvider with ChangeNotifier {
   NotificationData _notification = NotificationData();
   String _vueActive = "accueil";
   String? _imageZoomee;
+
+  // Timer Défis
+  int _tempsRestantDefi = 30;
+  Timer? _timerDefi;
+  String? _questionIdActive;
+
+  int get tempsRestantDefi => _tempsRestantDefi;
+  bool get timerActif => _timerDefi != null;
 
   String get theme => _theme;
   String get langue => _langue;
@@ -99,6 +109,43 @@ class AppProvider with ChangeNotifier {
 
   void setImageZoomee(String? image) {
     _imageZoomee = image;
+    notifyListeners();
+  }
+
+  void demarrerMinuteurDefi(String questionId, String userId) {
+    if (_timerDefi != null && _questionIdActive == questionId) return;
+    
+    arreterMinuteurDefi();
+    _questionIdActive = questionId;
+    _tempsRestantDefi = 30;
+    
+    _timerDefi = Timer.periodic(const Duration(seconds: 1), (timer) async {
+      if (_tempsRestantDefi > 0) {
+        _tempsRestantDefi--;
+        notifyListeners();
+      } else {
+        final qId = _questionIdActive;
+        arreterMinuteurDefi();
+        if (qId != null) {
+          try {
+            await ApiService.soumettreReponse(
+              userId: userId,
+              questionId: qId,
+              reponse: "",
+            );
+            // Rafraîchir les stats après soumission automatique
+            final stats = await ApiService.obtenirStatsUtilisateur(userId);
+            setDonneesUtilisateur({..._donneesUtilisateur!, ...stats});
+          } catch (_) {}
+        }
+      }
+    });
+    notifyListeners();
+  }
+
+  void arreterMinuteurDefi() {
+    _timerDefi?.cancel();
+    _timerDefi = null;
     notifyListeners();
   }
 }

@@ -59,6 +59,7 @@ class HomeViewState extends State<HomeView> {
             _categorie = data['category'] ?? "";
             _etat = "actif";
           });
+          provider.demarrerMinuteurDefi(_questionId, userId.toString());
         }
       }
     } catch (e) {
@@ -79,6 +80,7 @@ class HomeViewState extends State<HomeView> {
         questionId: _questionId,
         reponse: reponse,
       );
+      provider.arreterMinuteurDefi();
 
       final prefs = await SharedPreferences.getInstance();
 

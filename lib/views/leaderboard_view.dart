@@ -49,12 +49,13 @@ class LeaderboardViewState extends State<LeaderboardView> {
   }
 
   Widget _buildMedaille(int rang, ThemeData theme) {
-    if (rang == 1) {
-      return SvgPicture.asset('assets/images/svg-1er.svg', width: 32, height: 32);
-    } else if (rang == 2) {
-      return SvgPicture.asset('assets/images/svg-2eme.svg', width: 32, height: 32);
-    } else if (rang == 3) {
-      return SvgPicture.asset('assets/images/svg-3eme.svg', width: 32, height: 32);
+    final cleanValue = rang.toString().toLowerCase().trim();
+    if (cleanValue == "1" || cleanValue.startsWith("1")) {
+      return Image.asset('assets/images/svg-1er.png', width: 32, height: 32);
+    } else if (cleanValue == "2" || cleanValue.startsWith("2")) {
+      return Image.asset('assets/images/svg-2eme.png', width: 32, height: 32);
+    } else if (cleanValue == "3" || cleanValue.startsWith("3")) {
+      return Image.asset('assets/images/svg-3eme.png', width: 32, height: 32);
     }
     return Text(
       "#$rang", 
@@ -134,7 +135,7 @@ class LeaderboardViewState extends State<LeaderboardView> {
         final joueur = _classement[index];
         final rang = offsetRang + index + 1;
         final estMoi = joueur['id'] == provider.donneesUtilisateur?['id'];
-        final avatarUrl = joueur['photoProfil'] ?? "https://api.dicebear.com/7.x/notionists/svg?seed=${joueur['username']}";
+        final avatarUrl = joueur['photoProfil'];
 
         return Container(
           margin: const EdgeInsets.symmetric(vertical: 2),
@@ -151,11 +152,23 @@ class LeaderboardViewState extends State<LeaderboardView> {
                 children: [
                   SizedBox(width: 32, child: Center(child: _buildMedaille(rang, theme))),
                   const SizedBox(width: 8),
-                  CircleAvatar(
-                    backgroundImage: NetworkImage(avatarUrl),
-                    backgroundColor: theme.brightness == Brightness.light ? const Color(0xFFF4F4F5) : const Color(0xFF27272A),
-                    radius: 20,
-                  ),
+                    GestureDetector(
+                      onTap: () {
+                        if (avatarUrl != null && avatarUrl.isNotEmpty && avatarUrl.startsWith('http')) {
+                          provider.setImageZoomee(avatarUrl);
+                        }
+                      },
+                      child: CircleAvatar(
+                        backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty && avatarUrl.startsWith('http')) 
+                          ? NetworkImage(avatarUrl) 
+                          : null,
+                        backgroundColor: theme.brightness == Brightness.light ? const Color(0xFFF4F4F5) : const Color(0xFF27272A),
+                        radius: 20,
+                        child: (avatarUrl == null || avatarUrl.isEmpty || !avatarUrl.startsWith('http')) 
+                          ? Icon(PhosphorIcons.user(), size: 14, color: theme.textTheme.bodyMedium?.color?.withOpacity(0.3))
+                          : null,
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -168,8 +181,8 @@ class LeaderboardViewState extends State<LeaderboardView> {
               ),
             ),
             trailing: Text(
-              "${joueur['total_score']} PTS",
-              style: GoogleFonts.robotoMono( // Using RobotoMono for points as per CSS monospace hint
+              "${joueur['total_score'] ?? 0} PTS",
+              style: GoogleFonts.robotoMono(
                 fontWeight: FontWeight.w700,
                 fontSize: 14,
                 color: theme.textTheme.bodyMedium?.color?.withOpacity(0.8),

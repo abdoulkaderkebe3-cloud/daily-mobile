@@ -27,10 +27,17 @@ class ImageZoom extends StatelessWidget {
               child: Hero(
                 tag: imageUrl,
                 child: InteractiveViewer(
-                  child: Image.network(
-                    imageUrl,
-                    fit: BoxFit.contain,
-                  ),
+                  child: (imageUrl.isNotEmpty && imageUrl.startsWith('http')) 
+                    ? Image.network(
+                        imageUrl,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) => Center(
+                          child: Icon(PhosphorIcons.warning(), color: Colors.white, size: 48),
+                        ),
+                      )
+                    : Center(
+                        child: Icon(PhosphorIcons.user(), color: Colors.white, size: 100),
+                      ),
                 ),
               ),
             ),

@@ -22,36 +22,16 @@ class EtatActif extends StatefulWidget {
 
 class EtatActifState extends State<EtatActif> {
   final TextEditingController _reponseCtrl = TextEditingController();
-  int _tempsRestant = 30;
   bool _chargement = false;
-  Timer? _timer;
-  bool _autoSoumis = false;
 
   @override
   void initState() {
     super.initState();
-    _startTimer();
     _reponseCtrl.addListener(() => setState(() {}));
-  }
-
-  void _startTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) return;
-      
-      setState(() {
-        if (_tempsRestant > 0) {
-          _tempsRestant--;
-        } else if (!_autoSoumis && !_chargement) {
-          _autoSoumis = true;
-          _gererSoumission(reponse: "Temps écoulé");
-        }
-      });
-    });
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
     _reponseCtrl.dispose();
     super.dispose();
   }
@@ -78,7 +58,8 @@ class EtatActifState extends State<EtatActif> {
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
     final theme = Theme.of(context);
-    final isCritical = _tempsRestant <= 10;
+    final tempsRestant = provider.tempsRestantDefi;
+    final isCritical = tempsRestant <= 10;
 
     return Column(
       children: [
@@ -105,7 +86,7 @@ class EtatActifState extends State<EtatActif> {
           ),
         
         Text(
-          _tempsRestant > 0 ? "$_tempsRestant s" : "Terminé !",
+          tempsRestant > 0 ? "$tempsRestant s" : "Terminé !",
           style: GoogleFonts.inter(
             fontWeight: FontWeight.w700,
             fontSize: 14,

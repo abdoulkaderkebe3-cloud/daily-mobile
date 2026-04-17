@@ -3,9 +3,17 @@ import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class CommunityFooter extends StatelessWidget {
   const CommunityFooter({super.key});
+
+  Future<void> _lancerUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,9 +40,7 @@ class CommunityFooter extends StatelessWidget {
             width: double.infinity,
             height: 52,
             child: ElevatedButton(
-              onPressed: () {
-                // Open WhatsApp channel
-              },
+              onPressed: () => _lancerUrl("https://whatsapp.com/channel/0029Vb6avN0InlqWut6HV70k"),
               style: ElevatedButton.styleFrom(
                 backgroundColor: theme.primaryColor,
                 foregroundColor: theme.brightness == Brightness.light ? Colors.white : Colors.black,
@@ -55,8 +61,8 @@ class CommunityFooter extends StatelessWidget {
           
           InkWell(
             onTap: () {
-              // Share logic
-              provider.afficherNotification("Lien de parrainage copié !", type: "succes");
+              final message = Uri.encodeComponent("Rejoins-moi sur Daily Muse pour relever les défis quotidiens !");
+              _lancerUrl("https://wa.me/?text=$message");
             },
             borderRadius: BorderRadius.circular(12),
             child: Padding(
