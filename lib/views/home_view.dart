@@ -8,6 +8,7 @@ import '../components/badge_streak.dart';
 import '../components/carte_question.dart';
 import 'package:share_plus/share_plus.dart';
 import '../services/notification_service.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -24,6 +25,7 @@ class HomeViewState extends State<HomeView> {
   String _explication = "";
   bool _chargement = true;
   String _etat = "actif";
+  bool _pretPourDefi = false;
 
   @override
   void initState() {
@@ -87,11 +89,20 @@ class HomeViewState extends State<HomeView> {
           _questionId = data['id']?.toString() ?? "";
           _categorie = data['category'] ?? "";
           _etat = "actif";
+          _pretPourDefi = false; // Attendre le clic sur Commencer
           _chargement = false;
         });
-        provider.demarrerMinuteurDefi(_questionId, userId.toString());
       }
     }
+  }
+
+  void _demarrerDefi() {
+    final provider = context.read<AppProvider>();
+    final userId = provider.donneesUtilisateur?['id'];
+    if (userId == null) return;
+
+    setState(() => _pretPourDefi = true);
+    provider.demarrerMinuteurDefi(_questionId, userId.toString());
   }
 
   Future<void> _gererSoumission({required String reponse}) async {
@@ -198,6 +209,8 @@ class HomeViewState extends State<HomeView> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
               )
+            else if (_etat == "actif" && !_pretPourDefi)
+              _buildEcranDemarrage(theme)
             else
               CarteQuestion(
                 etat: _etat,
@@ -210,6 +223,56 @@ class HomeViewState extends State<HomeView> {
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildEcranDemarrage(ThemeData theme) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: theme.dividerColor),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: theme.primaryColor.withOpacity(0.05),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(PhosphorIcons.timer(), size: 48, color: theme.primaryColor),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            "Prêt pour le défi ?",
+            style: GoogleFonts.playfairDisplay(fontSize: 24, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            "Le chrono de 30 secondes démarrera dès que vous aurez chargé l'énigme.",
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(color: theme.textTheme.bodyMedium?.color?.withOpacity(0.5), height: 1.5),
+          ),
+          const SizedBox(height: 32),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _demarrerDefi,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: theme.primaryColor,
+                foregroundColor: theme.scaffoldBackgroundColor,
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                elevation: 0,
+              ),
+              child: Text("COMMENCER", style: GoogleFonts.inter(fontWeight: FontWeight.w800, letterSpacing: 1)),
+            ),
+          ),
+        ],
       ),
     );
   }

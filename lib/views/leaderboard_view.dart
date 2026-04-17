@@ -49,7 +49,8 @@ class LeaderboardViewState extends State<LeaderboardView> {
     });
 
     try {
-      final rep = await ApiService.obtenirUtilisateurs(page: _page, limite: limite);
+      final rep = await ApiService.obtenirUtilisateurs(page: _page, limite: limite)
+          .timeout(const Duration(seconds: 30));
       final liste = rep['users'] ?? rep['data'] ?? [];
       if (mounted) {
         setState(() {
@@ -125,17 +126,42 @@ class LeaderboardViewState extends State<LeaderboardView> {
     }
     
     if (_erreur) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(PhosphorIcons.trophy(), size: 64, color: theme.primaryColor.withOpacity(0.1)),
-            const SizedBox(height: 16),
-            Text(
-              "Le classement sera bientôt disponible.", 
-              style: GoogleFonts.inter(color: theme.textTheme.bodyMedium?.color?.withOpacity(0.4)),
-            ),
-          ],
+      return Padding(
+        padding: const EdgeInsets.all(24),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(PhosphorIcons.wifiSlash(), size: 64, color: theme.primaryColor.withOpacity(0.1)),
+              const SizedBox(height: 24),
+              Text(
+                "Le chargement prend trop de temps", 
+                style: GoogleFonts.playfairDisplay(fontSize: 20, fontWeight: FontWeight.w700),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "Vérifiez votre connexion internet et réessayez.", 
+                style: GoogleFonts.inter(color: theme.textTheme.bodyMedium?.color?.withOpacity(0.5)),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                  onPressed: _chargerClassement,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.primaryColor,
+                    foregroundColor: theme.scaffoldBackgroundColor,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    elevation: 0,
+                  ),
+                  child: Text("RÉESSAYER", style: GoogleFonts.inter(fontWeight: FontWeight.w800, letterSpacing: 1)),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }

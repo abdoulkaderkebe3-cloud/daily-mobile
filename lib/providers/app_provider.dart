@@ -103,6 +103,15 @@ class AppProvider with ChangeNotifier {
 
   void setDonneesUtilisateur(Map<String, dynamic>? utilisateur) {
     _donneesUtilisateur = utilisateur;
+    
+    // Effacer les caches pour éviter que le nouvel utilisateur ne voie les données du précédent
+    _cacheQuestion = null;
+    _dateCacheQuestion = null;
+    _cacheClassement = null;
+    _derniereMAJClassement = null;
+    _prefs?.remove("cache_question");
+    _prefs?.remove("date_cache_question");
+
     if (utilisateur != null) {
       _prefs?.setString("utilisateur", jsonEncode(utilisateur));
       preChargerDonnees();
