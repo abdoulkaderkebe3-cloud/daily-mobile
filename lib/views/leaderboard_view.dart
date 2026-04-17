@@ -28,6 +28,21 @@ class LeaderboardViewState extends State<LeaderboardView> {
   }
 
   Future<void> _chargerClassement() async {
+    final provider = context.read<AppProvider>();
+    
+    // Vérifier le cache (si moins de 30 minutes et même page)
+    if (provider.cacheClassement != null && 
+        provider.derniereMAJClassement != null &&
+        DateTime.now().difference(provider.derniereMAJClassement!).inMinutes < 30 &&
+        _page == 1) { // On ne cache que la page 1 pour simplifier
+      setState(() {
+        _classement = provider.cacheClassement!;
+        _chargement = false;
+        _erreur = false;
+      });
+      return;
+    }
+
     setState(() {
       _chargement = true;
       _erreur = false;
@@ -39,6 +54,7 @@ class LeaderboardViewState extends State<LeaderboardView> {
       if (mounted) {
         setState(() {
           _classement = liste;
+          if (_page == 1) provider.setCacheClassement(liste);
         });
       }
     } catch (e) {
@@ -50,11 +66,11 @@ class LeaderboardViewState extends State<LeaderboardView> {
 
   Widget _buildMedaille(int rang, ThemeData theme) {
     final cleanValue = rang.toString().toLowerCase().trim();
-    if (cleanValue == "1" || cleanValue.startsWith("1")) {
+    if (cleanValue == "1") {
       return Image.asset('assets/images/svg-1er.png', width: 32, height: 32);
-    } else if (cleanValue == "2" || cleanValue.startsWith("2")) {
+    } else if (cleanValue == "2") {
       return Image.asset('assets/images/svg-2eme.png', width: 32, height: 32);
-    } else if (cleanValue == "3" || cleanValue.startsWith("3")) {
+    } else if (cleanValue == "3") {
       return Image.asset('assets/images/svg-3eme.png', width: 32, height: 32);
     }
     return Text(

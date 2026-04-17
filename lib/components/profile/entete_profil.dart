@@ -52,7 +52,11 @@ class EnteteProfilState extends State<EnteteProfil> {
       setState(() => _enTrainDeModifierPseudo = false);
       provider.afficherNotification("Pseudo mis à jour !", type: "succes");
     } catch (err) {
-      provider.afficherNotification("Erreur lors de la mise à jour", type: "erreur");
+      String msg = "Erreur lors de la mise à jour";
+      if (err.toString().contains("409")) {
+        msg = "Ce nom d'utilisateur est déjà utilisé.";
+      }
+      provider.afficherNotification(msg, type: "erreur");
     }
   }
 
@@ -189,21 +193,34 @@ class EnteteProfilState extends State<EnteteProfil> {
           const SizedBox(height: 20),
           
           if (widget.modeEdition && _enTrainDeModifierPseudo)
-            SizedBox(
-              width: 250,
-              child: TextField(
-                controller: _pseudoCtrl,
-                textAlign: TextAlign.center,
-                autofocus: true,
-                onSubmitted: (_) => _gererMiseAJourPseudo(),
-                onEditingComplete: _gererMiseAJourPseudo,
-                style: GoogleFonts.playfairDisplay(fontSize: 24, fontWeight: FontWeight.w700),
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: theme.brightness == Brightness.light ? const Color(0xFFF4F4F5) : const Color(0xFF27272A),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                ),
+            Container(
+              constraints: const BoxConstraints(maxWidth: 300),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _pseudoCtrl,
+                      textAlign: TextAlign.center,
+                      autofocus: true,
+                      onSubmitted: (_) => _gererMiseAJourPseudo(),
+                      style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w700),
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: theme.brightness == Brightness.light ? const Color(0xFFF4F4F5) : const Color(0xFF27272A),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                        hintText: "Nouveau pseudo...",
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  _buildControlBtn(
+                    onTap: _gererMiseAJourPseudo, 
+                    icon: PhosphorIcons.check(), 
+                    theme: theme,
+                    active: true,
+                  ),
+                ],
               ),
             )
           else
@@ -216,8 +233,8 @@ class EnteteProfilState extends State<EnteteProfil> {
                 children: [
                   Text(
                     pseudo,
-                    style: GoogleFonts.playfairDisplay(
-                      fontSize: 28, 
+                    style: GoogleFonts.inter(
+                      fontSize: 24, 
                       fontWeight: FontWeight.w700,
                       letterSpacing: -0.5,
                     ),
@@ -274,16 +291,16 @@ class EnteteProfilState extends State<EnteteProfil> {
     
     if (isRank) {
       final cleanValue = value.toString().replaceAll('#', '').toLowerCase().trim();
-      if (cleanValue == "1" || cleanValue.startsWith("1")) {
+      if (cleanValue == "1") {
         valueWidget = Image.asset('assets/images/svg-1er.png', width: 32, height: 32);
-      } else if (cleanValue == "2" || cleanValue.startsWith("2")) {
+      } else if (cleanValue == "2") {
         valueWidget = Image.asset('assets/images/svg-2eme.png', width: 32, height: 32);
-      } else if (cleanValue == "3" || cleanValue.startsWith("3")) {
+      } else if (cleanValue == "3") {
         valueWidget = Image.asset('assets/images/svg-3eme.png', width: 32, height: 32);
       } else {
         valueWidget = Text(
           value, 
-          style: GoogleFonts.playfairDisplay(fontSize: 22, fontWeight: FontWeight.w700),
+          style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w700),
         );
       }
     } else {

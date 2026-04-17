@@ -10,8 +10,10 @@ class CommunityFooter extends StatelessWidget {
 
   Future<void> _lancerUrl(String url) async {
     final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
+    try {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      // Fallback or ignore
     }
   }
 

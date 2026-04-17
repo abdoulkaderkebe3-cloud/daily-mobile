@@ -6,6 +6,8 @@ import '../providers/app_provider.dart';
 import '../services/api_service.dart';
 import '../components/badge_streak.dart';
 import '../components/carte_question.dart';
+import 'package:share_plus/share_plus.dart';
+import '../services/notification_service.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -34,38 +36,61 @@ class HomeViewState extends State<HomeView> {
     final userId = provider.donneesUtilisateur?['id'];
     if (userId == null) return;
 
+    final today = DateTime.now().toIso8601String().split('T')[0];
+    
+    // Vérifier le cache
+    if (provider.cacheQuestion != null && provider.dateCacheQuestion == today) {
+      _appliquerDonneesQuestion(provider.cacheQuestion!);
+      return;
+    }
+
     setState(() => _chargement = true);
 
     try {
       final data = await ApiService.obtenirQuestionDuJour(userId.toString());
-      if (data['alreadyPlayed'] == true) {
-        final prefs = await SharedPreferences.getInstance();
-        final dernierEtat = prefs.getString("etat_$userId") ?? "succes";
-        
-        if (mounted) {
-          setState(() {
-            _etat = dernierEtat;
-            if (dernierEtat == "echec") {
-              _reponseCorrecte = prefs.getString("rep_$userId") ?? "";
-              _explication = prefs.getString("expl_$userId") ?? "";
-            }
-          });
-        }
-      } else {
-        if (mounted) {
-          setState(() {
-            _question = data['content'] ?? "";
-            _questionId = data['id']?.toString() ?? "";
-            _categorie = data['category'] ?? "";
-            _etat = "actif";
-          });
-          provider.demarrerMinuteurDefi(_questionId, userId.toString());
-        }
-      }
+      provider.setCacheQuestion(data, today);
+      _appliquerDonneesQuestion(data);
     } catch (e) {
       // Handle error
     } finally {
       if (mounted) setState(() => _chargement = false);
+    }
+  }
+
+  void _appliquerDonneesQuestion(Map<String, dynamic> data) async {
+    final provider = context.read<AppProvider>();
+    final userId = provider.donneesUtilisateur?['id'];
+    
+    if (data['alreadyPlayed'] == true) {
+      final prefs = await SharedPreferences.getInstance();
+      final dernierEtat = prefs.getString("etat_$userId") ?? "succes";
+      
+      // Si déjà joué aujourd'hui, on programme le rappel pour demain
+      NotificationService.programmerRappelQuotidien(demain: true);
+
+      if (mounted) {
+        setState(() {
+          _etat = dernierEtat;
+          if (dernierEtat == "echec") {
+            _reponseCorrecte = prefs.getString("rep_$userId") ?? "";
+            _explication = prefs.getString("expl_$userId") ?? "";
+          }
+          _chargement = false;
+        });
+      }
+    } else {
+      // Sinon on programme pour aujourd'hui (18h)
+      NotificationService.programmerRappelQuotidien(demain: false);
+      if (mounted) {
+        setState(() {
+          _question = data['content'] ?? "";
+          _questionId = data['id']?.toString() ?? "";
+          _categorie = data['category'] ?? "";
+          _etat = "actif";
+          _chargement = false;
+        });
+        provider.demarrerMinuteurDefi(_questionId, userId.toString());
+      }
     }
   }
 
@@ -96,6 +121,7 @@ class HomeViewState extends State<HomeView> {
       if (data['isCorrect'] == true) {
         await prefs.setString("etat_$userId", "succes");
         provider.afficherNotification("Correct ! +${data['pointsEarned']} pts", type: "succes");
+        NotificationService.programmerRappelQuotidien(demain: true);
         if (mounted) setState(() => _etat = "succes");
         
         // Refresh stats
@@ -109,6 +135,7 @@ class HomeViewState extends State<HomeView> {
         await prefs.setString("etat_$userId", "echec");
         await prefs.setString("rep_$userId", rep);
         await prefs.setString("expl_$userId", expl);
+        NotificationService.programmerRappelQuotidien(demain: true);
         
         if (mounted) {
           setState(() {
@@ -126,11 +153,8 @@ class HomeViewState extends State<HomeView> {
 
 
   void _gererPartage() {
-    // Basic sharing logic or copy to clipboard
-    final provider = context.read<AppProvider>();
     final texte = "Le Daily Muse m'a mis en difficulté aujourd'hui\n❓ « $_question »\nOn compare nos scores ?\ndaily-hazel.vercel.app";
-    // We can use a clipboard tool here for Flutter
-    provider.afficherNotification("Copié !", type: "succes");
+    Share.share(texte);
   }
 
   @override

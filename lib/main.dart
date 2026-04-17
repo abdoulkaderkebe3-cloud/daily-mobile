@@ -9,8 +9,12 @@ import 'components/notification_bubble.dart';
 import 'components/image_zoom.dart';
 
 import 'package:google_fonts/google_fonts.dart';
+import 'services/notification_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService.initialiser();
+  
   runApp(
     MultiProvider(
       providers: [

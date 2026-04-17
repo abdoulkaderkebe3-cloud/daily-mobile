@@ -18,6 +18,7 @@ class AppProvider with ChangeNotifier {
   String _langue = "fr";
   Map<String, dynamic>? _donneesUtilisateur;
   bool _isLoadingUtilisateur = true;
+  SharedPreferences? _prefs;
 
   NotificationData _notification = NotificationData();
   String _vueActive = "accueil";
@@ -28,8 +29,21 @@ class AppProvider with ChangeNotifier {
   Timer? _timerDefi;
   String? _questionIdActive;
 
+  // Caches
+  Map<String, dynamic>? _cacheQuestion;
+  String? _dateCacheQuestion;
+  
+  List<dynamic>? _cacheClassement;
+  DateTime? _derniereMAJClassement;
+
   int get tempsRestantDefi => _tempsRestantDefi;
   bool get timerActif => _timerDefi != null;
+
+  Map<String, dynamic>? get cacheQuestion => _cacheQuestion;
+  String? get dateCacheQuestion => _dateCacheQuestion;
+
+  List<dynamic>? get cacheClassement => _cacheClassement;
+  DateTime? get derniereMAJClassement => _derniereMAJClassement;
 
   String get theme => _theme;
   String get langue => _langue;
@@ -44,18 +58,29 @@ class AppProvider with ChangeNotifier {
   }
 
   Future<void> _loadPreferences() async {
-    final prefs = await SharedPreferences.getInstance();
-    _theme = prefs.getString("theme") ?? "dark";
-    _langue = prefs.getString("langue") ?? "fr";
+    _prefs = await SharedPreferences.getInstance();
+    _theme = _prefs?.getString("theme") ?? "dark";
+    _langue = _prefs?.getString("langue") ?? "fr";
     
-    final savedUser = prefs.getString("utilisateur");
+    final savedUser = _prefs?.getString("utilisateur");
     if (savedUser != null) {
       try {
         _donneesUtilisateur = jsonDecode(savedUser);
+        // Lancement du préchargement en arrière-plan
+        preChargerDonnees();
       } catch (e) {
         _donneesUtilisateur = null;
       }
     }
+
+    final savedQ = _prefs?.getString("cache_question");
+    if (savedQ != null) {
+      try {
+        _cacheQuestion = jsonDecode(savedQ);
+        _dateCacheQuestion = _prefs?.getString("date_cache_question");
+      } catch (_) {}
+    }
+
     _isLoadingUtilisateur = false;
     notifyListeners();
   }
@@ -66,28 +91,23 @@ class AppProvider with ChangeNotifier {
 
   Future<void> basculerTheme() async {
     _theme = _theme == "dark" ? "light" : "dark";
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString("theme", _theme);
+    await _prefs?.setString("theme", _theme);
     notifyListeners();
   }
 
   Future<void> basculerLangue() async {
     _langue = _langue == "fr" ? "en" : "fr";
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString("langue", _langue);
+    await _prefs?.setString("langue", _langue);
     notifyListeners();
   }
 
   void setDonneesUtilisateur(Map<String, dynamic>? utilisateur) {
     _donneesUtilisateur = utilisateur;
     if (utilisateur != null) {
-      SharedPreferences.getInstance().then((prefs) {
-        prefs.setString("utilisateur", jsonEncode(utilisateur));
-      });
+      _prefs?.setString("utilisateur", jsonEncode(utilisateur));
+      preChargerDonnees();
     } else {
-      SharedPreferences.getInstance().then((prefs) {
-        prefs.remove("utilisateur");
-      });
+      _prefs?.remove("utilisateur");
     }
     notifyListeners();
   }
@@ -147,5 +167,53 @@ class AppProvider with ChangeNotifier {
     _timerDefi?.cancel();
     _timerDefi = null;
     notifyListeners();
+  }
+
+  void setCacheQuestion(Map<String, dynamic>? data, String date) {
+    _cacheQuestion = data;
+    _dateCacheQuestion = date;
+    if (data != null) {
+      _prefs?.setString("cache_question", jsonEncode(data));
+      _prefs?.setString("date_cache_question", date);
+    } else {
+      _prefs?.remove("cache_question");
+      _prefs?.remove("date_cache_question");
+    }
+    notifyListeners();
+  }
+
+  void setCacheClassement(List<dynamic>? data) {
+    _cacheClassement = data;
+    _derniereMAJClassement = DateTime.now();
+    notifyListeners();
+  }
+
+  /// Précharge les données essentielles en arrière-plan
+  Future<void> preChargerDonnees() async {
+    final userId = _donneesUtilisateur?['id'];
+    if (userId == null) return;
+
+    final idStr = userId.toString();
+
+    // 1. Rafraîchir les stats de l'utilisateur
+    ApiService.obtenirStatsUtilisateur(idStr).then((stats) {
+      if (_donneesUtilisateur != null) {
+        setDonneesUtilisateur({..._donneesUtilisateur!, ...stats});
+      }
+    }).catchError((_) {});
+
+    // 2. Précharger la question du jour si non présente ou périmée
+    final today = DateTime.now().toIso8601String().split('T')[0];
+    if (_cacheQuestion == null || _dateCacheQuestion != today) {
+       ApiService.obtenirQuestionDuJour(idStr).then((data) {
+         setCacheQuestion(data, today);
+       }).catchError((_) {});
+    }
+
+    // 3. Précharger le premier top 10 du classement
+    ApiService.obtenirUtilisateurs(page: 1, limite: 10).then((rep) {
+      final liste = rep['users'] ?? rep['data'] ?? [];
+      setCacheClassement(liste);
+    }).catchError((_) {});
   }
 }

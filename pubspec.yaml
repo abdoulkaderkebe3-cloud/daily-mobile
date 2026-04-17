@@ -1,5 +1,5 @@
-name: viso_studio_flutter
-description: A new Flutter version of Viso Studio Community.
+name: daily_muse
+description: daily muse est une application mobile pour les amoureux des mots et de la culture générale ,l'application propose chaque jour une énigme basé que sur la culture ivoirienne et des citations motivantes.
 
 publish_to: 'none'
 
@@ -34,6 +34,9 @@ dependencies:
   google_fonts: ^6.1.0
   image_picker: ^1.2.1
   url_launcher: ^6.3.2
+  share_plus: ^10.1.0
+  flutter_local_notifications: ^17.2.2
+  timezone: ^0.9.4
 
 dev_dependencies:
   flutter_test:
