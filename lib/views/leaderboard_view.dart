@@ -33,21 +33,20 @@ class LeaderboardViewState extends State<LeaderboardView> with AutomaticKeepAliv
   Future<void> _chargerClassement() async {
     final provider = context.read<AppProvider>();
     
-    // Vérifier le cache
-    if (provider.cacheClassement != null && 
-        _page == 1) { // On ne cache que la page 1 pour simplifier
+    // Afficher le cache immédiatement si disponible
+    if (provider.cacheClassement != null && _page == 1) {
       setState(() {
         _classement = provider.cacheClassement!;
         _chargement = false;
         _erreur = false;
       });
-      return;
+      // On ne fait PAS de return ici pour rafraîchir en arrière-plan
+    } else {
+      setState(() {
+        _chargement = true;
+        _erreur = false;
+      });
     }
-
-    setState(() {
-      _chargement = true;
-      _erreur = false;
-    });
 
     try {
       final rep = await ApiService.obtenirUtilisateurs(page: _page, limite: limite)
@@ -57,10 +56,13 @@ class LeaderboardViewState extends State<LeaderboardView> with AutomaticKeepAliv
         setState(() {
           _classement = liste;
           if (_page == 1) provider.setCacheClassement(liste);
+          _chargement = false;
         });
       }
     } catch (e) {
-      if (mounted) setState(() => _erreur = true);
+      if (mounted && _classement.isEmpty) {
+        setState(() => _erreur = true);
+      }
     } finally {
       if (mounted) setState(() => _chargement = false);
     }
