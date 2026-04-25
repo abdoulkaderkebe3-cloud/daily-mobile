@@ -33,6 +33,7 @@ class CarteQuestion extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Container(
+      width: double.infinity,
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -63,7 +64,10 @@ class CarteQuestion extends StatelessWidget {
           
           Padding(
             padding: const EdgeInsets.only(top: 20),
-            child: _buildContent(),
+            child: SizedBox(
+              width: double.infinity,
+              child: _buildContent(),
+            ),
           ),
         ],
       ),

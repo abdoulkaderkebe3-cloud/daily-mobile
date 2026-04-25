@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
@@ -54,8 +55,21 @@ class EnteteProfilState extends State<EnteteProfil> {
       provider.afficherNotification("Pseudo mis à jour !", type: "succes");
     } catch (err) {
       String msg = "Erreur lors de la mise à jour";
-      if (err.toString().contains("409")) {
+      final errStr = err.toString();
+      if (errStr.contains("409")) {
         msg = "Ce nom d'utilisateur est déjà utilisé.";
+      } else if (errStr.contains("400")) {
+        try {
+          final jsonStr = errStr.substring(errStr.indexOf('{'));
+          final jsonObj = jsonDecode(jsonStr);
+          if (jsonObj['message'] is List && jsonObj['message'].isNotEmpty) {
+            msg = jsonObj['message'][0];
+          } else if (jsonObj['message'] is String) {
+            msg = jsonObj['message'];
+          }
+        } catch (_) {
+          msg = "Le nom d'utilisateur est invalide (min 3, max 15 caractères, sans caractères spéciaux).";
+        }
       }
       provider.afficherNotification(msg, type: "erreur");
     }
