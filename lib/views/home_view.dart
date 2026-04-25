@@ -17,7 +17,9 @@ class HomeView extends StatefulWidget {
   HomeViewState createState() => HomeViewState();
 }
 
-class HomeViewState extends State<HomeView> {
+class HomeViewState extends State<HomeView> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
   String _question = "";
   String _questionId = "";
   String _categorie = "";
@@ -26,6 +28,7 @@ class HomeViewState extends State<HomeView> {
   bool _chargement = true;
   String _etat = "actif";
   bool _pretPourDefi = false;
+  String _messageDejaJoue = "";
 
   @override
   void initState() {
@@ -36,7 +39,10 @@ class HomeViewState extends State<HomeView> {
   Future<void> _chargerQuestion() async {
     final provider = context.read<AppProvider>();
     final userId = provider.donneesUtilisateur?['id'];
-    if (userId == null) return;
+    if (userId == null) {
+      setState(() => _chargement = false);
+      return;
+    }
 
     final today = DateTime.now().toIso8601String().split('T')[0];
     
@@ -53,7 +59,11 @@ class HomeViewState extends State<HomeView> {
       provider.setCacheQuestion(data, today);
       _appliquerDonneesQuestion(data);
     } catch (e) {
-      // Handle error
+      if (mounted) {
+        setState(() {
+          _etat = "erreur";
+        });
+      }
     } finally {
       if (mounted) setState(() => _chargement = false);
     }
@@ -65,17 +75,26 @@ class HomeViewState extends State<HomeView> {
     
     if (data['alreadyPlayed'] == true) {
       final prefs = await SharedPreferences.getInstance();
-      final dernierEtat = prefs.getString("etat_$userId") ?? "succes";
+      final dernierEtat = prefs.getString("etat_$userId");
+      
+      // Load cached question
+      final cachedQuestion = prefs.getString("question_$userId");
       
       // Si déjà joué aujourd'hui, on programme le rappel pour demain
       NotificationService.programmerRappelQuotidien(demain: true);
 
       if (mounted) {
         setState(() {
-          _etat = dernierEtat;
+          if (cachedQuestion != null) _question = cachedQuestion;
           if (dernierEtat == "echec") {
+            _etat = "echec";
             _reponseCorrecte = prefs.getString("rep_$userId") ?? "";
             _explication = prefs.getString("expl_$userId") ?? "";
+          } else if (dernierEtat == "succes") {
+            _etat = "succes";
+          } else {
+            _etat = "deja_joue";
+            _messageDejaJoue = data['message'] ?? "Vous avez déjà joué aujourd'hui !";
           }
           _chargement = false;
         });
@@ -83,6 +102,13 @@ class HomeViewState extends State<HomeView> {
     } else {
       // Sinon on programme pour aujourd'hui (18h)
       NotificationService.programmerRappelQuotidien(demain: false);
+      
+      // Save question for later
+      final prefs = await SharedPreferences.getInstance();
+      if (data['content'] != null) {
+        await prefs.setString("question_$userId", data['content']);
+      }
+
       if (mounted) {
         setState(() {
           _question = data['content'] ?? "";
@@ -102,7 +128,13 @@ class HomeViewState extends State<HomeView> {
     if (userId == null) return;
 
     setState(() => _pretPourDefi = true);
-    provider.demarrerMinuteurDefi(_questionId, userId.toString());
+    provider.demarrerMinuteurDefi(
+      _questionId, 
+      userId.toString(),
+      onTimeout: () {
+        if (mounted) _gererSoumission(reponse: "");
+      },
+    );
   }
 
   Future<void> _gererSoumission({required String reponse}) async {
@@ -170,7 +202,11 @@ class HomeViewState extends State<HomeView> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<AppProvider>();
+    super.build(context);
+    final provider = context.read<AppProvider>();
+    context.select<AppProvider, String>((p) => p.langue);
+    final isConnected = context.select<AppProvider, bool>((p) => p.donneesUtilisateur?['id'] != null);
+    final streak = context.select<AppProvider, int>((p) => p.donneesUtilisateur?['streak'] ?? 0);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -195,22 +231,26 @@ class HomeViewState extends State<HomeView> {
                       ),
                     ),
                   ),
-                  BadgeStreak(streak: provider.donneesUtilisateur?['streak'] ?? 0),
+                  BadgeStreak(streak: streak),
                 ],
               ),
             ),
             
             const SizedBox(height: 32),
             
-            if (_chargement)
+            if (!isConnected)
+              _buildNonConnecte(theme, provider)
+            else if (_chargement)
               const Center(
                 child: Padding(
                   padding: EdgeInsets.all(60.0),
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
               )
+            else if (_etat == "erreur")
+              _buildErreur(theme, provider)
             else if (_etat == "actif" && !_pretPourDefi)
-              _buildEcranDemarrage(theme)
+              _buildEcranDemarrage(theme, provider)
             else
               CarteQuestion(
                 etat: _etat,
@@ -218,6 +258,7 @@ class HomeViewState extends State<HomeView> {
                 categorie: _categorie,
                 reponseCorrecte: _reponseCorrecte,
                 explication: _explication,
+                messageDejaJoue: _messageDejaJoue,
                 onSoumettre: _gererSoumission,
                 onPartager: _gererPartage,
               ),
@@ -227,7 +268,48 @@ class HomeViewState extends State<HomeView> {
     );
   }
 
-  Widget _buildEcranDemarrage(ThemeData theme) {
+  Widget _buildErreur(ThemeData theme, AppProvider provider) {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(PhosphorIcons.wifiSlash(), size: 64, color: theme.primaryColor.withOpacity(0.1)),
+            const SizedBox(height: 24),
+            Text(
+              provider.t("err_timeout"), 
+              style: GoogleFonts.playfairDisplay(fontSize: 20, fontWeight: FontWeight.w700),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              provider.t("err_check_internet"), 
+              style: GoogleFonts.inter(color: theme.textTheme.bodyMedium?.color?.withOpacity(0.5)),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _chargerQuestion,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.primaryColor,
+                  foregroundColor: theme.scaffoldBackgroundColor,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  elevation: 0,
+                ),
+                child: Text(provider.t("btn_retry"), style: GoogleFonts.inter(fontWeight: FontWeight.w800, letterSpacing: 1)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEcranDemarrage(ThemeData theme, AppProvider provider) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24),
       padding: const EdgeInsets.all(32),
@@ -248,12 +330,13 @@ class HomeViewState extends State<HomeView> {
           ),
           const SizedBox(height: 24),
           Text(
-            "Prêt pour le défi ?",
+            provider.t("titre_pret"),
             style: GoogleFonts.playfairDisplay(fontSize: 24, fontWeight: FontWeight.w700),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
           Text(
-            "Le chrono de 30 secondes démarrera dès que vous aurez chargé l'énigme.",
+            provider.t("msg_chrono_desc"),
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(color: theme.textTheme.bodyMedium?.color?.withOpacity(0.5), height: 1.5),
           ),
@@ -269,8 +352,37 @@ class HomeViewState extends State<HomeView> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 elevation: 0,
               ),
-              child: Text("COMMENCER", style: GoogleFonts.inter(fontWeight: FontWeight.w800, letterSpacing: 1)),
+              child: Text(provider.t("btn_commencer"), style: GoogleFonts.inter(fontWeight: FontWeight.w800, letterSpacing: 1)),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNonConnecte(ThemeData theme, AppProvider provider) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: theme.dividerColor),
+      ),
+      child: Column(
+        children: [
+          Icon(PhosphorIcons.userMinus(), size: 64, color: theme.primaryColor.withOpacity(0.5)),
+          const SizedBox(height: 24),
+          Text(
+            provider.t("titre_veuillez_connecter"),
+            style: GoogleFonts.playfairDisplay(fontSize: 24, fontWeight: FontWeight.w700),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            provider.t("msg_connectez_vous"),
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(color: theme.textTheme.bodyMedium?.color?.withOpacity(0.5), height: 1.5),
           ),
         ],
       ),

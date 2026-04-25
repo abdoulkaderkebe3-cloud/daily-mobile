@@ -6,6 +6,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class EnteteProfil extends StatefulWidget {
   final bool modeEdition;
@@ -102,9 +103,10 @@ class EnteteProfilState extends State<EnteteProfil> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<AppProvider>();
+    final provider = context.read<AppProvider>();
+    context.select<AppProvider, String>((p) => p.langue);
+    final user = context.select<AppProvider, Map<String, dynamic>?>((p) => p.donneesUtilisateur);
     final theme = Theme.of(context);
-    final user = provider.donneesUtilisateur;
     
     final pseudo = user?['username'] ?? "Utilisateur";
     final points = user?['total_score'] ?? 0;
@@ -160,7 +162,7 @@ class EnteteProfilState extends State<EnteteProfil> {
                   child: CircleAvatar(
                     radius: 50,
                     backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty && avatarUrl.startsWith('http')) 
-                      ? NetworkImage(avatarUrl) 
+                      ? CachedNetworkImageProvider(avatarUrl) 
                       : null,
                     backgroundColor: theme.brightness == Brightness.light ? const Color(0xFFF4F4F5) : const Color(0xFF27272A),
                     child: (avatarUrl == null || avatarUrl.isEmpty || !avatarUrl.startsWith('http')) 

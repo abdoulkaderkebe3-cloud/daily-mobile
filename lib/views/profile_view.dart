@@ -16,7 +16,9 @@ class ProfileView extends StatefulWidget {
   ProfileViewState createState() => ProfileViewState();
 }
 
-class ProfileViewState extends State<ProfileView> {
+class ProfileViewState extends State<ProfileView> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
   bool _modeEdition = false;
 
   @override
@@ -60,6 +62,7 @@ class ProfileViewState extends State<ProfileView> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: Column(

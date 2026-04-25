@@ -4,13 +4,16 @@ import '../../providers/app_provider.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class EtatSucces extends StatelessWidget {
-  const EtatSucces({super.key});
+class EtatDejaJoue extends StatelessWidget {
+  final String message;
+
+  const EtatDejaJoue({super.key, required this.message});
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.read<AppProvider>();
-    context.select<AppProvider, String>((p) => p.langue);
+    // Note: We don't necessarily need to select AppProvider here if we don't use it, 
+    // but leaving it empty if no translations are needed or using select if needed.
+    // Actually, looking at the code, provider is not even used!
     final theme = Theme.of(context);
 
     return Column(
@@ -19,20 +22,20 @@ class EtatSucces extends StatelessWidget {
           width: 80,
           height: 80,
           decoration: BoxDecoration(
-            color: const Color(0xFF10B981).withOpacity(0.1),
+            color: theme.primaryColor.withOpacity(0.1),
             shape: BoxShape.circle,
           ),
           child: Center(
             child: Icon(
-              PhosphorIcons.checkCircle(),
-              color: const Color(0xFF10B981),
+              PhosphorIcons.clock(),
+              color: theme.primaryColor,
               size: 40,
             ),
           ),
         ),
         const SizedBox(height: 24),
         Text(
-          provider.t("titre_succes"),
+          "Déjà joué !",
           style: GoogleFonts.inter(
             fontSize: 24,
             fontWeight: FontWeight.w600,
@@ -40,7 +43,7 @@ class EtatSucces extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Text(
-          provider.t("msg_revenir"),
+          message,
           textAlign: TextAlign.center,
           style: GoogleFonts.playfairDisplay(
             fontSize: 16,

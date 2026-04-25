@@ -6,6 +6,7 @@ import '../services/api_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class LeaderboardView extends StatefulWidget {
   const LeaderboardView({super.key});
@@ -14,7 +15,9 @@ class LeaderboardView extends StatefulWidget {
   LeaderboardViewState createState() => LeaderboardViewState();
 }
 
-class LeaderboardViewState extends State<LeaderboardView> {
+class LeaderboardViewState extends State<LeaderboardView> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
   static const int limite = 10;
   List<dynamic> _classement = [];
   bool _chargement = true;
@@ -30,10 +33,8 @@ class LeaderboardViewState extends State<LeaderboardView> {
   Future<void> _chargerClassement() async {
     final provider = context.read<AppProvider>();
     
-    // Vérifier le cache (si moins de 30 minutes et même page)
+    // Vérifier le cache
     if (provider.cacheClassement != null && 
-        provider.derniereMAJClassement != null &&
-        DateTime.now().difference(provider.derniereMAJClassement!).inMinutes < 30 &&
         _page == 1) { // On ne cache que la page 1 pour simplifier
       setState(() {
         _classement = provider.cacheClassement!;
@@ -86,7 +87,11 @@ class LeaderboardViewState extends State<LeaderboardView> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<AppProvider>();
+    super.build(context);
+    final provider = context.read<AppProvider>();
+    context.select<AppProvider, String>((p) => p.langue);
+    final userId = context.select<AppProvider, dynamic>((p) => p.donneesUtilisateur?['id']);
+    
     final theme = Theme.of(context);
     final offsetRang = (_page - 1) * limite;
     final aPageSuivante = _classement.length == limite;
@@ -111,16 +116,16 @@ class LeaderboardViewState extends State<LeaderboardView> {
         ),
         
         Expanded(
-          child: _buildBody(theme, provider, offsetRang),
+          child: _buildBody(theme, provider, offsetRang, userId),
         ),
         
         if (!_erreur && (_classement.isNotEmpty || _page > 1))
-          _buildPagination(aPagePrecedente, aPageSuivante, theme),
+          _buildPagination(aPagePrecedente, aPageSuivante, theme, provider),
       ],
     );
   }
 
-  Widget _buildBody(ThemeData theme, AppProvider provider, int offsetRang) {
+  Widget _buildBody(ThemeData theme, AppProvider provider, int offsetRang, dynamic userId) {
     if (_chargement) {
       return const Center(child: CircularProgressIndicator(strokeWidth: 2));
     }
@@ -135,13 +140,13 @@ class LeaderboardViewState extends State<LeaderboardView> {
               Icon(PhosphorIcons.wifiSlash(), size: 64, color: theme.primaryColor.withOpacity(0.1)),
               const SizedBox(height: 24),
               Text(
-                "Le chargement prend trop de temps", 
+                provider.t("err_timeout"), 
                 style: GoogleFonts.playfairDisplay(fontSize: 20, fontWeight: FontWeight.w700),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               Text(
-                "Vérifiez votre connexion internet et réessayez.", 
+                provider.t("err_check_internet"), 
                 style: GoogleFonts.inter(color: theme.textTheme.bodyMedium?.color?.withOpacity(0.5)),
                 textAlign: TextAlign.center,
               ),
@@ -157,7 +162,7 @@ class LeaderboardViewState extends State<LeaderboardView> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     elevation: 0,
                   ),
-                  child: Text("RÉESSAYER", style: GoogleFonts.inter(fontWeight: FontWeight.w800, letterSpacing: 1)),
+                  child: Text(provider.t("btn_retry"), style: GoogleFonts.inter(fontWeight: FontWeight.w800, letterSpacing: 1)),
                 ),
               ),
             ],
@@ -167,7 +172,7 @@ class LeaderboardViewState extends State<LeaderboardView> {
     }
 
     if (_classement.isEmpty) {
-      return Center(child: Text("Aucun joueur pour l'instant", style: GoogleFonts.inter(color: theme.textTheme.bodyMedium?.color?.withOpacity(0.4))));
+      return Center(child: Text(provider.t("msg_no_players"), style: GoogleFonts.inter(color: theme.textTheme.bodyMedium?.color?.withOpacity(0.4))));
     }
 
     return ListView.builder(
@@ -176,7 +181,7 @@ class LeaderboardViewState extends State<LeaderboardView> {
       itemBuilder: (context, index) {
         final joueur = _classement[index];
         final rang = offsetRang + index + 1;
-        final estMoi = joueur['id'] == provider.donneesUtilisateur?['id'];
+        final estMoi = joueur['id'] == userId;
         final avatarUrl = joueur['photoProfil'];
 
         return Container(
@@ -202,7 +207,7 @@ class LeaderboardViewState extends State<LeaderboardView> {
                       },
                       child: CircleAvatar(
                         backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty && avatarUrl.startsWith('http')) 
-                          ? NetworkImage(avatarUrl) 
+                          ? CachedNetworkImageProvider(avatarUrl) 
                           : null,
                         backgroundColor: theme.brightness == Brightness.light ? const Color(0xFFF4F4F5) : const Color(0xFF27272A),
                         radius: 20,
@@ -236,7 +241,7 @@ class LeaderboardViewState extends State<LeaderboardView> {
     );
   }
 
-  Widget _buildPagination(bool aPrecedente, bool aSuivante, ThemeData theme) {
+  Widget _buildPagination(bool aPrecedente, bool aSuivante, ThemeData theme, AppProvider provider) {
     return Container(
       padding: const EdgeInsets.all(20.0),
       decoration: BoxDecoration(
@@ -248,14 +253,14 @@ class LeaderboardViewState extends State<LeaderboardView> {
           _buildPagBtn(aPrecedente ? () {
             setState(() => _page--);
             _chargerClassement();
-          } : null, PhosphorIcons.caretLeft(), "Précédent", theme),
+          } : null, PhosphorIcons.caretLeft(), provider.t("btn_prev"), theme),
           
-          Text("PAGE $_page", style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 11, letterSpacing: 1)),
+          Text("${provider.t("lbl_page")} $_page", style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 11, letterSpacing: 1)),
           
           _buildPagBtn(aSuivante ? () {
             setState(() => _page++);
             _chargerClassement();
-          } : null, PhosphorIcons.caretRight(), "Suivant", theme, reversed: true),
+          } : null, PhosphorIcons.caretRight(), provider.t("btn_next"), theme, reversed: true),
         ],
       ),
     );

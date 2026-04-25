@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'etats_question/etat_actif.dart';
 import 'etats_question/etat_succes.dart';
 import 'etats_question/etat_echec.dart';
+import 'etats_question/etat_deja_joue.dart';
 
 class CarteQuestion extends StatelessWidget {
   final String etat; // "actif" | "succes" | "echec"
@@ -11,6 +12,7 @@ class CarteQuestion extends StatelessWidget {
   final String categorie;
   final String reponseCorrecte;
   final String explication;
+  final String messageDejaJoue;
   final Future<void> Function({required String reponse}) onSoumettre;
   final VoidCallback onPartager;
 
@@ -21,6 +23,7 @@ class CarteQuestion extends StatelessWidget {
     required this.categorie,
     required this.reponseCorrecte,
     required this.explication,
+    this.messageDejaJoue = "",
     required this.onSoumettre,
     required this.onPartager,
   });
@@ -93,6 +96,8 @@ class CarteQuestion extends StatelessWidget {
           reponseCorrecte: reponseCorrecte,
           explication: explication,
         );
+      case "deja_joue":
+        return EtatDejaJoue(message: messageDejaJoue);
       case "actif":
       default:
         return EtatActif(

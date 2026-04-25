@@ -85,6 +85,22 @@ class Translations {
       'msg_notifs_activees': "Notifications activées !",
       'msg_notifs_bloquees': "Notifications bloquées.",
       'msg_notifs_non_supportees': "Pas supporté sur cet appareil.",
+      
+      // Ajouts HomeView
+      'titre_pret': "Prêt pour le défi ?",
+      'msg_chrono_desc': "Le chrono de 30 secondes démarrera dès que vous aurez chargé l'énigme.",
+      'btn_commencer': "COMMENCER",
+      'titre_veuillez_connecter': "Veuillez vous connecter",
+      'msg_connectez_vous': "Connectez-vous pour participer au défi du jour.",
+      
+      // Ajouts Erreurs / Leaderboard
+      'err_timeout': "Le chargement prend trop de temps",
+      'err_check_internet': "Vérifiez votre connexion internet et réessayez.",
+      'btn_retry': "RÉESSAYER",
+      'msg_no_players': "Aucun joueur pour l'instant",
+      'btn_prev': "Précédent",
+      'btn_next': "Suivant",
+      'lbl_page': "PAGE",
     },
     'en': {
       // App
@@ -171,6 +187,22 @@ class Translations {
       'msg_notifs_activees': "Notifications enabled!",
       'msg_notifs_bloquees': "Notifications blocked.",
       'msg_notifs_non_supportees': "Not supported on this device.",
+      
+      // HomeView Additions
+      'titre_pret': "Ready for the challenge?",
+      'msg_chrono_desc': "The 30-second timer will start as soon as you load the riddle.",
+      'btn_commencer': "START",
+      'titre_veuillez_connecter': "Please log in",
+      'msg_connectez_vous': "Log in to participate in the daily challenge.",
+      
+      // Error / Leaderboard Additions
+      'err_timeout': "Loading takes too long",
+      'err_check_internet': "Check your internet connection and try again.",
+      'btn_retry': "RETRY",
+      'msg_no_players': "No players yet",
+      'btn_prev': "Previous",
+      'btn_next': "Next",
+      'lbl_page': "PAGE",
     }
   };
 }

@@ -8,9 +8,11 @@ import 'package:google_fonts/google_fonts.dart';
 class NavBar extends StatelessWidget {
   const NavBar({super.key});
 
-  @override
   Widget build(BuildContext context) {
-    final provider = context.watch<AppProvider>();
+    final provider = context.read<AppProvider>();
+    final vueActive = context.select<AppProvider, String>((p) => p.vueActive);
+    // On sélectionne la langue pour que la nav bar se reconstruise si la langue change
+    context.select<AppProvider, String>((p) => p.langue);
     final theme = Theme.of(context);
     
     final boutons = [
@@ -36,7 +38,7 @@ class NavBar extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: boutons.map((btn) {
-              final isActif = provider.vueActive == btn['vue'];
+              final isActif = vueActive == btn['vue'];
               final color = isActif ? theme.primaryColor : theme.textTheme.bodyMedium?.color?.withOpacity(0.4);
 
               return InkWell(

@@ -56,9 +56,10 @@ class EtatActifState extends State<EtatActif> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<AppProvider>();
+    final provider = context.read<AppProvider>();
+    context.select<AppProvider, String>((p) => p.langue);
+    final tempsRestant = context.select<AppProvider, int>((p) => p.tempsRestantDefi);
     final theme = Theme.of(context);
-    final tempsRestant = provider.tempsRestantDefi;
     final isCritical = tempsRestant <= 10;
 
     return Column(

@@ -30,7 +30,7 @@ class TheDailyMuseApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.watch<AppProvider>().theme;
+    final theme = context.select<AppProvider, String>((p) => p.theme);
     
     return MaterialApp(
       debugShowCheckedModeBanner: false,
@@ -88,15 +88,19 @@ class AppContentState extends State<AppContent> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<AppProvider>();
+    final provider = context.read<AppProvider>();
+    final isLoadingUtilisateur = context.select<AppProvider, bool>((p) => p.isLoadingUtilisateur);
+    final user = context.select<AppProvider, Map<String, dynamic>?>((p) => p.donneesUtilisateur);
+    final imageZoomee = context.select<AppProvider, String?>((p) => p.imageZoomee);
+    final notification = context.select<AppProvider, NotificationData>((p) => p.notification);
 
     return Scaffold(
       body: Stack(
         children: [
           // Main content logic
-          if (provider.isLoadingUtilisateur)
+          if (isLoadingUtilisateur)
             const LoadingScreen()
-          else if (provider.donneesUtilisateur == null && !_afficherBienvenue)
+          else if (user == null && !_afficherBienvenue)
             AuthScreen(onSuccess: onLoginOrRegisterSuccess)
           else if (_afficherBienvenue)
             WelcomeScreen(
@@ -106,25 +110,25 @@ class AppContentState extends State<AppContent> {
                 });
               },
             )
-          else if (provider.donneesUtilisateur != null)
+          else if (user != null)
             const MainAppScreen(),
 
           // Image Zoom Layer
-          if (provider.imageZoomee != null)
+          if (imageZoomee != null)
             ImageZoom(
-              imageUrl: provider.imageZoomee!,
+              imageUrl: imageZoomee,
               onFermer: () => provider.setImageZoomee(null),
             ),
             
           // Notification Layer
-          if (provider.notification.visible)
+          if (notification.visible)
             Positioned(
               bottom: 20,
               left: 20,
               right: 20,
               child: NotificationBubble(
-                message: provider.notification.message,
-                type: provider.notification.type,
+                message: notification.message,
+                type: notification.type,
               ),
             ),
         ],

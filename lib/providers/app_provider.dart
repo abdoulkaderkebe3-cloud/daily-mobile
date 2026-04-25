@@ -141,31 +141,21 @@ class AppProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void demarrerMinuteurDefi(String questionId, String userId) {
+  void demarrerMinuteurDefi(String questionId, String userId, {VoidCallback? onTimeout}) {
     if (_timerDefi != null && _questionIdActive == questionId) return;
     
     arreterMinuteurDefi();
     _questionIdActive = questionId;
     _tempsRestantDefi = 30;
     
-    _timerDefi = Timer.periodic(const Duration(seconds: 1), (timer) async {
+    _timerDefi = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_tempsRestantDefi > 0) {
         _tempsRestantDefi--;
         notifyListeners();
       } else {
-        final qId = _questionIdActive;
         arreterMinuteurDefi();
-        if (qId != null) {
-          try {
-            await ApiService.soumettreReponse(
-              userId: userId,
-              questionId: qId,
-              reponse: "",
-            );
-            // Rafraîchir les stats après soumission automatique
-            final stats = await ApiService.obtenirStatsUtilisateur(userId);
-            setDonneesUtilisateur({..._donneesUtilisateur!, ...stats});
-          } catch (_) {}
+        if (onTimeout != null) {
+          onTimeout();
         }
       }
     });

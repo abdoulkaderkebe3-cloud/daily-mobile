@@ -44,7 +44,8 @@ class ZoneCadeauxState extends State<ZoneCadeaux> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<AppProvider>();
+    final provider = context.read<AppProvider>();
+    context.select<AppProvider, String>((p) => p.langue);
     final theme = Theme.of(context);
 
     return Container(
