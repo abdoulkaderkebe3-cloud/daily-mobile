@@ -37,26 +37,42 @@ class HomeViewState extends State<HomeView> with AutomaticKeepAliveClientMixin {
     _chargerQuestion();
   }
 
-  Future<void> _chargerQuestion() async {
+  Future<void> _chargerQuestion({bool isRefresh = false}) async {
     final provider = context.read<AppProvider>();
+    
+    // Empêcher l'actualisation pendant que le chrono tourne (triche)
+    if (provider.timerActif && isRefresh) {
+      provider.forcerEchecDefi();
+      provider.afficherNotification("Action non autorisée pendant le défi !", type: "erreur");
+      return;
+    }
+
     final userId = provider.donneesUtilisateur?['id'];
     if (userId == null) {
-      setState(() => _chargement = false);
+      if (mounted && !isRefresh) setState(() => _chargement = false);
       return;
     }
 
     final today = DateTime.now().toIso8601String().split('T')[0];
     
     // Vérifier le cache
-    if (provider.cacheQuestion != null && provider.dateCacheQuestion == today) {
+    if (!isRefresh && provider.cacheQuestion != null && provider.dateCacheQuestion == today) {
       _appliquerDonneesQuestion(provider.cacheQuestion!);
       return;
     }
 
-    setState(() => _chargement = true);
+    if (!isRefresh && mounted) {
+      setState(() => _chargement = true);
+    }
 
     try {
       final data = await ApiService.obtenirQuestionDuJour(userId.toString());
+      
+      if (isRefresh) {
+        // Garantir un temps minimum d'affichage de l'animation d'actualisation
+        await Future.delayed(const Duration(milliseconds: 600));
+      }
+
       provider.setCacheQuestion(data, today);
       _appliquerDonneesQuestion(data);
     } catch (e) {
@@ -250,7 +266,7 @@ class HomeViewState extends State<HomeView> with AutomaticKeepAliveClientMixin {
     return CustomScrollView(
       physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
       slivers: [
-        MuseRefreshControl(onRefresh: _chargerQuestion),
+        MuseRefreshControl(onRefresh: () => _chargerQuestion(isRefresh: true)),
         SliverPadding(
           padding: const EdgeInsets.symmetric(vertical: 24.0),
           sliver: SliverList(

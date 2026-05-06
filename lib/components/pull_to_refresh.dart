@@ -55,7 +55,7 @@ class _MuseRefreshIndicatorState extends State<_MuseRefreshIndicator>
     super.initState();
     _rotationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: 400),
     );
   }
 

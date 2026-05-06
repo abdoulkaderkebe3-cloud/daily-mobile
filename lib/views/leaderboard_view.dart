@@ -31,11 +31,11 @@ class LeaderboardViewState extends State<LeaderboardView> with AutomaticKeepAliv
     _chargerClassement();
   }
 
-  Future<void> _chargerClassement() async {
+  Future<void> _chargerClassement({bool isRefresh = false}) async {
     final provider = context.read<AppProvider>();
     
     // Afficher le cache immédiatement si disponible
-    if (provider.cacheClassement != null && _page == 1) {
+    if (!isRefresh && provider.cacheClassement != null && _page == 1) {
       setState(() {
         _classement = provider.cacheClassement!;
         _chargement = false;
@@ -43,15 +43,23 @@ class LeaderboardViewState extends State<LeaderboardView> with AutomaticKeepAliv
       });
       // On ne fait PAS de return ici pour rafraîchir en arrière-plan
     } else {
-      setState(() {
-        _chargement = true;
-        _erreur = false;
-      });
+      if (!isRefresh && mounted) {
+        setState(() {
+          _chargement = true;
+          _erreur = false;
+        });
+      }
     }
 
     try {
       final rep = await ApiService.obtenirUtilisateurs(page: _page, limite: limite)
           .timeout(const Duration(seconds: 30));
+          
+      if (isRefresh) {
+        // Garantir un temps minimum d'affichage de l'animation d'actualisation
+        await Future.delayed(const Duration(milliseconds: 600));
+      }
+
       final liste = rep['users'] ?? rep['data'] ?? [];
       if (mounted) {
         setState(() {
@@ -102,27 +110,28 @@ class LeaderboardViewState extends State<LeaderboardView> with AutomaticKeepAliv
 
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
-          child: Row(
-            children: [
-              Text(
-                provider.t("titre_classement"),
-                style: GoogleFonts.playfairDisplay(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: -0.5,
-                ),
-              ),
-            ],
-          ),
-        ),
-        
         Expanded(
           child: CustomScrollView(
             physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
             slivers: [
-              MuseRefreshControl(onRefresh: _chargerClassement),
+              MuseRefreshControl(onRefresh: () => _chargerClassement(isRefresh: true)),
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
+                sliver: SliverToBoxAdapter(
+                  child: Row(
+                    children: [
+                      Text(
+                        provider.t("titre_classement"),
+                        style: GoogleFonts.playfairDisplay(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               ..._buildSlivers(theme, provider, offsetRang, userId),
             ],
           ),
