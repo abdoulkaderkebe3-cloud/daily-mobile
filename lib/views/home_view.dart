@@ -74,10 +74,14 @@ class HomeViewState extends State<HomeView> with AutomaticKeepAliveClientMixin {
     final provider = context.read<AppProvider>();
     final userId = provider.donneesUtilisateur?['id'];
     
-    if (data['alreadyPlayed'] == true) {
-      final prefs = await SharedPreferences.getInstance();
-      final dernierEtat = prefs.getString("etat_$userId");
-      
+    final prefs = await SharedPreferences.getInstance();
+    final today = DateTime.now().toIso8601String().split('T')[0];
+    final dateEtat = prefs.getString("date_etat_$userId");
+    final dernierEtat = prefs.getString("etat_$userId");
+    
+    bool aJoueLocalementAujourdhui = (dateEtat == today && dernierEtat != null);
+
+    if (data['alreadyPlayed'] == true || aJoueLocalementAujourdhui) {
       // Load cached question
       final cachedQuestion = prefs.getString("question_$userId");
       
@@ -152,6 +156,23 @@ class HomeViewState extends State<HomeView> with AutomaticKeepAliveClientMixin {
           _explication = "Défi échoué (hors délai ou action non autorisée).";
         });
       }
+      
+      // On envoie cette chaîne de caractères spécifique à l'API en arrière-plan
+      reponse = "___TRICHE_OU_TIMEOUT___";
+      
+      // Sauvegarde immédiate locale pour éviter de rejouer en rechargeant la page
+      final prefs = await SharedPreferences.getInstance();
+      final today = DateTime.now().toIso8601String().split('T')[0];
+      await prefs.setString("etat_$userId", "echec");
+      await prefs.setString("date_etat_$userId", today);
+      await prefs.setString("rep_$userId", "...");
+      await prefs.setString("expl_$userId", "Défi échoué (hors délai ou action non autorisée).");
+      
+      final cachedData = provider.cacheQuestion;
+      if (cachedData != null) {
+        cachedData['alreadyPlayed'] = true;
+        provider.setCacheQuestion(cachedData, today);
+      }
     }
 
     try {
@@ -174,7 +195,9 @@ class HomeViewState extends State<HomeView> with AutomaticKeepAliveClientMixin {
       final expl = data['explanation'] ?? "";
 
       if (data['isCorrect'] == true) {
+        final today = DateTime.now().toIso8601String().split('T')[0];
         await prefs.setString("etat_$userId", "succes");
+        await prefs.setString("date_etat_$userId", today);
         provider.afficherNotification("Correct ! +${data['pointsEarned']} pts", type: "succes");
         NotificationService.programmerRappelQuotidien(demain: true);
         if (mounted) setState(() => _etat = "succes");
@@ -187,7 +210,9 @@ class HomeViewState extends State<HomeView> with AutomaticKeepAliveClientMixin {
           provider.setDonneesUtilisateur(u);
         } catch (_) {}
       } else {
+        final today = DateTime.now().toIso8601String().split('T')[0];
         await prefs.setString("etat_$userId", "echec");
+        await prefs.setString("date_etat_$userId", today);
         await prefs.setString("rep_$userId", rep);
         await prefs.setString("expl_$userId", expl);
         NotificationService.programmerRappelQuotidien(demain: true);

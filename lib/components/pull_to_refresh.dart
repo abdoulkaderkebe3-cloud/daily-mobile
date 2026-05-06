@@ -69,12 +69,7 @@ class _MuseRefreshIndicatorState extends State<_MuseRefreshIndicator>
     } else {
       if (_rotationController.isAnimating) {
         _rotationController.stop();
-      }
-      if (widget.refreshState == RefreshIndicatorMode.drag ||
-          widget.refreshState == RefreshIndicatorMode.armed) {
-        // Rotation proportionnelle au tirage (tourne 2 fois plus vite)
-        _rotationController.value =
-            (widget.pulledExtent / widget.refreshTriggerPullDistance) * 2.0;
+        _rotationController.value = 0.0;
       }
     }
   }

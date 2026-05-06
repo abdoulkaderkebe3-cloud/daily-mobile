@@ -37,12 +37,14 @@ class ProfileViewState extends State<ProfileView> with AutomaticKeepAliveClientM
     if (userId == null) return;
 
     try {
+      final userFull = await ApiService.obtenirUtilisateur(userId.toString());
       final stats = await ApiService.obtenirStatsUtilisateur(userId.toString());
-      if (stats is Map<String, dynamic>) {
-        final updatedData = Map<String, dynamic>.from(userData ?? {});
-        updatedData.addAll(stats);
-        provider.setDonneesUtilisateur(updatedData);
-      }
+      
+      final updatedData = Map<String, dynamic>.from(userData ?? {});
+      if (userFull is Map<String, dynamic>) updatedData.addAll(userFull);
+      if (stats is Map<String, dynamic>) updatedData.addAll(stats);
+      
+      provider.setDonneesUtilisateur(updatedData);
     } catch (err) {
       debugPrint("Erreur refresh stats: $err");
     }
