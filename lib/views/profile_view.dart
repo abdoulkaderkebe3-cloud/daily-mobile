@@ -8,6 +8,7 @@ import '../components/profile/parametres.dart';
 import '../components/profile/community_footer.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../components/pull_to_refresh.dart';
 
 class ProfileView extends StatefulWidget {
   final Future<void> Function() onLogout;
@@ -75,37 +76,43 @@ class ProfileViewState extends State<ProfileView> with AutomaticKeepAliveClientM
     final provider = context.read<AppProvider>();
     final theme = Theme.of(context);
     
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-      child: Column(
-        children: [
-          EnteteProfil(
-            modeEdition: _modeEdition,
-            onToggleEdition: (val) => setState(() => _modeEdition = val),
-          ),
-          
-          const SizedBox(height: 16),
-          
-          if (!_modeEdition)
-            ZoneCadeaux(onUtiliserCode: _gererUtiliserCode)
-          else ...[
-            Parametres(onDeconnexion: widget.onLogout),
-            const SizedBox(height: 16),
-            const CommunityFooter(),
-          ],
+    return CustomScrollView(
+      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+      slivers: [
+        MuseRefreshControl(onRefresh: _refreshStats),
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate([
+              EnteteProfil(
+                modeEdition: _modeEdition,
+                onToggleEdition: (val) => setState(() => _modeEdition = val),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              if (!_modeEdition)
+                ZoneCadeaux(onUtiliserCode: _gererUtiliserCode)
+              else ...[
+                Parametres(onDeconnexion: widget.onLogout),
+                const SizedBox(height: 16),
+                const CommunityFooter(),
+              ],
 
-          const SizedBox(height: 32),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildFooterLink(provider.t("lbl_liens_utiles"), "https://linktr.ee/VisoStudio.co", theme),
-              Text(provider.t("lbl_et"), style: GoogleFonts.inter(fontSize: 12, color: theme.brightness == Brightness.light ? Colors.black : Colors.white)),
-              _buildFooterLink(provider.t("lbl_conditions_utilisations"), "https://viso-studio.com", theme),
-            ],
+              const SizedBox(height: 32),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildFooterLink(provider.t("lbl_liens_utiles"), "https://linktr.ee/VisoStudio.co", theme),
+                  Text(provider.t("lbl_et"), style: GoogleFonts.inter(fontSize: 12, color: theme.brightness == Brightness.light ? Colors.black : Colors.white)),
+                  _buildFooterLink(provider.t("lbl_conditions_utilisations"), "https://viso-studio.com", theme),
+                ],
+              ),
+              const SizedBox(height: 20),
+            ]),
           ),
-          const SizedBox(height: 20),
-        ],
-      ),
+        ),
+      ],
     );
   }
 

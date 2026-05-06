@@ -14,16 +14,28 @@ class MainAppScreen extends StatefulWidget {
   State<MainAppScreen> createState() => _MainAppScreenState();
 }
 
-class _MainAppScreenState extends State<MainAppScreen> {
+class _MainAppScreenState extends State<MainAppScreen> with WidgetsBindingObserver {
   late PageController _pageController;
   int _currentIndex = 0;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     final provider = context.read<AppProvider>();
     _currentIndex = _getIndex(provider.vueActive);
     _pageController = PageController(initialPage: _currentIndex);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      final provider = context.read<AppProvider>();
+      if (provider.timerActif) {
+        provider.forcerEchecDefi();
+        provider.afficherNotification("Vous avez quitté l'application !", type: "erreur");
+      }
+    }
   }
 
   int _getIndex(String vue) {
@@ -40,6 +52,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _pageController.dispose();
     super.dispose();
   }
@@ -67,6 +80,12 @@ class _MainAppScreenState extends State<MainAppScreen> {
               child: PageView(
                 controller: _pageController,
                 onPageChanged: (index) {
+                  if (index != _currentIndex) {
+                    if (provider.timerActif) {
+                      provider.forcerEchecDefi();
+                      provider.afficherNotification("Vous avez changé d'onglet !", type: "erreur");
+                    }
+                  }
                   _currentIndex = index;
                   if (provider.vueActive != _getVue(index)) {
                     provider.changerVue(_getVue(index));

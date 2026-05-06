@@ -28,6 +28,7 @@ class AppProvider with ChangeNotifier {
   int _tempsRestantDefi = 30;
   Timer? _timerDefi;
   String? _questionIdActive;
+  VoidCallback? _onTimeoutDefi;
 
   // Caches
   Map<String, dynamic>? _cacheQuestion;
@@ -147,6 +148,7 @@ class AppProvider with ChangeNotifier {
     arreterMinuteurDefi();
     _questionIdActive = questionId;
     _tempsRestantDefi = 30;
+    _onTimeoutDefi = onTimeout;
     
     _timerDefi = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_tempsRestantDefi > 0) {
@@ -154,12 +156,22 @@ class AppProvider with ChangeNotifier {
         notifyListeners();
       } else {
         arreterMinuteurDefi();
-        if (onTimeout != null) {
-          onTimeout();
+        if (_onTimeoutDefi != null) {
+          _onTimeoutDefi!();
         }
       }
     });
     notifyListeners();
+  }
+
+  void forcerEchecDefi() {
+    if (timerActif) {
+      _tempsRestantDefi = 0; // Force le chrono à 0 pour bloquer l'UI
+      arreterMinuteurDefi();
+      if (_onTimeoutDefi != null) {
+        _onTimeoutDefi!();
+      }
+    }
   }
 
   void arreterMinuteurDefi() {

@@ -42,6 +42,9 @@ class EtatActifState extends State<EtatActif> {
 
     setState(() => _chargement = true);
     
+    // Arrêter le chrono obligatoirement lors de la validation
+    context.read<AppProvider>().arreterMinuteurDefi();
+    
     try {
       await widget.onSoumettre(reponse: rep);
     } finally {
@@ -119,7 +122,7 @@ class EtatActifState extends State<EtatActif> {
             children: [
               TextField(
                 controller: _reponseCtrl,
-                enabled: !_chargement,
+                enabled: !_chargement && tempsRestant > 0,
                 onSubmitted: (_) => _gererSoumission(),
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w500),
@@ -146,7 +149,7 @@ class EtatActifState extends State<EtatActif> {
                 width: double.infinity,
                 height: 64,
                 child: ElevatedButton(
-                  onPressed: (_chargement || _reponseCtrl.text.trim().isEmpty) 
+                  onPressed: (_chargement || _reponseCtrl.text.trim().isEmpty || tempsRestant == 0) 
                       ? null 
                       : () => _gererSoumission(),
                   style: ElevatedButton.styleFrom(

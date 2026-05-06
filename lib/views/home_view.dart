@@ -9,6 +9,7 @@ import '../components/carte_question.dart';
 import 'package:share_plus/share_plus.dart';
 import '../services/notification_service.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import '../components/pull_to_refresh.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -142,6 +143,17 @@ class HomeViewState extends State<HomeView> with AutomaticKeepAliveClientMixin {
     final userId = provider.donneesUtilisateur?['id'];
     if (userId == null) return;
 
+    // Si la réponse est vide (timeout ou triche), on met à jour l'UI instantanément pour bloquer l'interaction
+    if (reponse.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _etat = "echec";
+          _reponseCorrecte = "...";
+          _explication = "Défi échoué (hors délai ou action non autorisée).";
+        });
+      }
+    }
+
     try {
       final data = await ApiService.soumettreReponse(
         userId: userId.toString(),
@@ -210,61 +222,65 @@ class HomeViewState extends State<HomeView> with AutomaticKeepAliveClientMixin {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 24.0),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    child: Text(
-                      provider.t("titre_enigme"),
-                      style: GoogleFonts.playfairDisplay(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: -0.5,
+    return CustomScrollView(
+      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+      slivers: [
+        MuseRefreshControl(onRefresh: _chargerQuestion),
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(vertical: 24.0),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate([
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        provider.t("titre_enigme"),
+                        style: GoogleFonts.playfairDisplay(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: -0.5,
+                        ),
                       ),
                     ),
-                  ),
-                  BadgeStreak(streak: streak),
-                ],
-              ),
-            ),
-            
-            const SizedBox(height: 32),
-            
-            if (!isConnected)
-              _buildNonConnecte(theme, provider)
-            else if (_chargement)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(60.0),
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                    BadgeStreak(streak: streak),
+                  ],
                 ),
-              )
-            else if (_etat == "erreur")
-              _buildErreur(theme, provider)
-            else if (_etat == "actif" && !_pretPourDefi)
-              _buildEcranDemarrage(theme, provider)
-            else
-              CarteQuestion(
-                etat: _etat,
-                question: _question,
-                categorie: _categorie,
-                reponseCorrecte: _reponseCorrecte,
-                explication: _explication,
-                messageDejaJoue: _messageDejaJoue,
-                onSoumettre: _gererSoumission,
-                onPartager: _gererPartage,
               ),
-          ],
+              
+              const SizedBox(height: 32),
+              
+              if (!isConnected)
+                _buildNonConnecte(theme, provider)
+              else if (_chargement)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(60.0),
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+              else if (_etat == "erreur")
+                _buildErreur(theme, provider)
+              else if (_etat == "actif" && !_pretPourDefi)
+                _buildEcranDemarrage(theme, provider)
+              else
+                CarteQuestion(
+                  etat: _etat,
+                  question: _question,
+                  categorie: _categorie,
+                  reponseCorrecte: _reponseCorrecte,
+                  explication: _explication,
+                  messageDejaJoue: _messageDejaJoue,
+                  onSoumettre: _gererSoumission,
+                  onPartager: _gererPartage,
+                ),
+            ]),
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -289,20 +305,6 @@ class HomeViewState extends State<HomeView> with AutomaticKeepAliveClientMixin {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _chargerQuestion,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.primaryColor,
-                  foregroundColor: theme.scaffoldBackgroundColor,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  elevation: 0,
-                ),
-                child: Text(provider.t("btn_retry"), style: GoogleFonts.inter(fontWeight: FontWeight.w800, letterSpacing: 1)),
-              ),
-            ),
           ],
         ),
       ),

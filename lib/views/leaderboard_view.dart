@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../components/pull_to_refresh.dart';
 
 class LeaderboardView extends StatefulWidget {
   const LeaderboardView({super.key});
@@ -118,7 +119,13 @@ class LeaderboardViewState extends State<LeaderboardView> with AutomaticKeepAliv
         ),
         
         Expanded(
-          child: _buildBody(theme, provider, offsetRang, userId),
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+            slivers: [
+              MuseRefreshControl(onRefresh: _chargerClassement),
+              ..._buildSlivers(theme, provider, offsetRang, userId),
+            ],
+          ),
         ),
         
         if (!_erreur && (_classement.isNotEmpty || _page > 1))
@@ -127,58 +134,56 @@ class LeaderboardViewState extends State<LeaderboardView> with AutomaticKeepAliv
     );
   }
 
-  Widget _buildBody(ThemeData theme, AppProvider provider, int offsetRang, dynamic userId) {
+  List<Widget> _buildSlivers(ThemeData theme, AppProvider provider, int offsetRang, dynamic userId) {
     if (_chargement) {
-      return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+      return [const SliverFillRemaining(child: Center(child: CircularProgressIndicator(strokeWidth: 2)))];
     }
     
     if (_erreur) {
-      return Padding(
-        padding: const EdgeInsets.all(24),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(PhosphorIcons.wifiSlash(), size: 64, color: theme.primaryColor.withOpacity(0.1)),
-              const SizedBox(height: 24),
-              Text(
-                provider.t("err_timeout"), 
-                style: GoogleFonts.playfairDisplay(fontSize: 20, fontWeight: FontWeight.w700),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                provider.t("err_check_internet"), 
-                style: GoogleFonts.inter(color: theme.textTheme.bodyMedium?.color?.withOpacity(0.5)),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                  onPressed: _chargerClassement,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.primaryColor,
-                    foregroundColor: theme.scaffoldBackgroundColor,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    elevation: 0,
+      return [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(PhosphorIcons.wifiSlash(), size: 64, color: theme.primaryColor.withValues(alpha: 0.1)),
+                  const SizedBox(height: 24),
+                  Text(
+                    provider.t("err_timeout"), 
+                    style: GoogleFonts.playfairDisplay(fontSize: 20, fontWeight: FontWeight.w700),
+                    textAlign: TextAlign.center,
                   ),
-                  child: Text(provider.t("btn_retry"), style: GoogleFonts.inter(fontWeight: FontWeight.w800, letterSpacing: 1)),
-                ),
+                  const SizedBox(height: 8),
+                  Text(
+                    provider.t("err_check_internet"), 
+                    style: GoogleFonts.inter(color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5)),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 32),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      );
+        )
+      ];
     }
 
     if (_classement.isEmpty) {
-      return Center(child: Text(provider.t("msg_no_players"), style: GoogleFonts.inter(color: theme.textTheme.bodyMedium?.color?.withOpacity(0.4))));
+      return [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Center(child: Text(provider.t("msg_no_players"), style: GoogleFonts.inter(color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.4)))),
+        )
+      ];
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+    return [
+      SliverPadding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        sliver: SliverList.builder(
       itemCount: _classement.length,
       itemBuilder: (context, index) {
         final joueur = _classement[index];
@@ -240,7 +245,9 @@ class LeaderboardViewState extends State<LeaderboardView> with AutomaticKeepAliv
           ),
         );
       },
-    );
+    )
+    )
+    ];
   }
 
   Widget _buildPagination(bool aPrecedente, bool aSuivante, ThemeData theme, AppProvider provider) {
