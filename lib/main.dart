@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'providers/app_provider.dart';
 import 'screens/auth_screen.dart';
 import 'screens/loading_screen.dart';
+import 'screens/splash_screen.dart';
 import 'screens/welcome_screen.dart';
 import 'screens/main_app_screen.dart';
 import 'components/notification_bubble.dart';
@@ -72,6 +73,7 @@ class AppContent extends StatefulWidget {
 
 class AppContentState extends State<AppContent> {
   bool _afficherBienvenue = false;
+  bool _splashTermine = false;
 
   void onLoginOrRegisterSuccess() {
     setState(() {
@@ -97,21 +99,33 @@ class AppContentState extends State<AppContent> {
     return Scaffold(
       body: Stack(
         children: [
-          // Main content logic
-          if (isLoadingUtilisateur)
-            const LoadingScreen()
-          else if (user == null && !_afficherBienvenue)
-            AuthScreen(onSuccess: onLoginOrRegisterSuccess)
-          else if (_afficherBienvenue)
-            WelcomeScreen(
-              onTermine: () {
-                setState(() {
-                  _afficherBienvenue = false;
-                });
-              },
-            )
-          else if (user != null)
-            const MainAppScreen(),
+          // Main content logic with transition
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 800),
+            child: !_splashTermine
+                ? SplashScreen(
+                    key: const ValueKey('splash'),
+                    onComplete: () {
+                      setState(() {
+                        _splashTermine = true;
+                      });
+                    },
+                  )
+                : (isLoadingUtilisateur
+                    ? const LoadingScreen(key: ValueKey('loading'))
+                    : (user == null && !_afficherBienvenue
+                        ? AuthScreen(key: const ValueKey('auth'), onSuccess: onLoginOrRegisterSuccess)
+                        : (_afficherBienvenue
+                            ? WelcomeScreen(
+                                key: const ValueKey('welcome'),
+                                onTermine: () {
+                                  setState(() {
+                                    _afficherBienvenue = false;
+                                  });
+                                },
+                              )
+                            : const MainAppScreen(key: ValueKey('main'))))),
+          ),
 
           // Image Zoom Layer
           if (imageZoomee != null)
