@@ -101,6 +101,11 @@ class Translations {
       'btn_prev': "Précédent",
       'btn_next': "Suivant",
       'lbl_page': "PAGE",
+      'lbl_accepter_conditions': "Accepter les",
+      'lbl_conditions_utilisations': "conditions d'utilisations",
+      'lbl_liens_utiles': "Liens utiles",
+      'err_conditions_non_acceptees': "Vous devez accepter les conditions d'utilisations.",
+      'lbl_et': " et ",
     },
     'en': {
       // App
@@ -202,7 +207,12 @@ class Translations {
       'msg_no_players': "No players yet",
       'btn_prev': "Previous",
       'btn_next': "Next",
-      'lbl_page': "PAGE",
+    'lbl_page': "PAGE",
+      'lbl_accepter_conditions': "Accept the",
+      'lbl_conditions_utilisations': "terms of use",
+      'lbl_liens_utiles': "Useful links",
+      'err_conditions_non_acceptees': "You must accept the terms of use.",
+      'lbl_et': " and ",
     }
   };
 }

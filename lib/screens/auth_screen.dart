@@ -6,6 +6,7 @@ import '../services/api_service.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AuthScreen extends StatefulWidget {
   final VoidCallback onSuccess;
@@ -34,6 +35,7 @@ class AuthScreenState extends State<AuthScreen> {
   int _tentatives = 0;
   int _tempsRestant = 0;
   Timer? _verrouillageTimer;
+  bool _accepteConditions = false;
 
   @override
   void dispose() {
@@ -53,8 +55,16 @@ class AuthScreenState extends State<AuthScreen> {
       if (nouveauMode == "login" || nouveauMode == "register_init" || nouveauMode == "forgot_init") {
         _motDePasseCtrl.clear();
         _codeCtrl.clear();
+        _accepteConditions = false;
       }
     });
+  }
+
+  Future<void> _lancerUrl(String url) async {
+    final uri = Uri.parse(url);
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {}
   }
 
   void _lancerVerrouillage() {
@@ -88,6 +98,9 @@ class AuthScreenState extends State<AuthScreen> {
       if (_identiteCtrl.text.trim().isEmpty) return false;
       if (_motDePasseCtrl.text.trim().isEmpty) return false;
     }
+    
+    if (_mode == "register_init" && !_accepteConditions) return false;
+    
     return true;
   }
 
@@ -104,7 +117,11 @@ class AuthScreenState extends State<AuthScreen> {
     final provider = context.read<AppProvider>();
 
     if (!_validerFormulaire()) {
-      setState(() => _erreur = provider.t("err_remplir_champs"));
+      if (_mode == "register_init" && !_accepteConditions) {
+        setState(() => _erreur = provider.t("err_conditions_non_acceptees"));
+      } else {
+        setState(() => _erreur = provider.t("err_remplir_champs"));
+      }
       return;
     }
 
@@ -336,6 +353,48 @@ class AuthScreenState extends State<AuthScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
+                ],
+
+                if (_mode == "register_init") ...[
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: Checkbox(
+                          value: _accepteConditions,
+                          onChanged: (val) => setState(() => _accepteConditions = val ?? false),
+                          activeColor: theme.primaryColor,
+                          side: BorderSide(color: theme.dividerColor, width: 2),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => _lancerUrl("https://viso-studio.com"),
+                          child: RichText(
+                            text: TextSpan(
+                              style: GoogleFonts.inter(fontSize: 13, color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7)),
+                              children: [
+                                TextSpan(text: provider.t("lbl_accepter_conditions") + " "),
+                                TextSpan(
+                                  text: provider.t("lbl_conditions_utilisations"),
+                                  style: const TextStyle(
+                                    decoration: TextDecoration.underline, 
+                                    decorationColor: Colors.blue,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.blue,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
                 ],
 
                 SizedBox(

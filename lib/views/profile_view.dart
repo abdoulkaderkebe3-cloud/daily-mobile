@@ -6,6 +6,8 @@ import '../components/profile/entete_profil.dart';
 import '../components/profile/zone_cadeaux.dart';
 import '../components/profile/parametres.dart';
 import '../components/profile/community_footer.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProfileView extends StatefulWidget {
   final Future<void> Function() onLogout;
@@ -60,9 +62,19 @@ class ProfileViewState extends State<ProfileView> with AutomaticKeepAliveClientM
     }
   }
 
+  Future<void> _lancerUrl(String url) async {
+    final uri = Uri.parse(url);
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {}
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final provider = context.read<AppProvider>();
+    final theme = Theme.of(context);
+    
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: Column(
@@ -81,7 +93,38 @@ class ProfileViewState extends State<ProfileView> with AutomaticKeepAliveClientM
             const SizedBox(height: 16),
             const CommunityFooter(),
           ],
+
+          const SizedBox(height: 32),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildFooterLink(provider.t("lbl_liens_utiles"), "https://linktr.ee/VisoStudio.co", theme),
+              Text(provider.t("lbl_et"), style: GoogleFonts.inter(fontSize: 12, color: theme.brightness == Brightness.light ? Colors.black : Colors.white)),
+              _buildFooterLink(provider.t("lbl_conditions_utilisations"), "https://viso-studio.com", theme),
+            ],
+          ),
+          const SizedBox(height: 20),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFooterLink(String text, String url, ThemeData theme) {
+    return InkWell(
+      onTap: () => _lancerUrl(url),
+      borderRadius: BorderRadius.circular(4),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        child: Text(
+          text,
+          style: GoogleFonts.inter(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: Colors.blue,
+            decoration: TextDecoration.underline,
+            decorationColor: Colors.blue,
+          ),
+        ),
       ),
     );
   }
