@@ -64,6 +64,12 @@ class _MainAppScreenState extends State<MainAppScreen> with WidgetsBindingObserv
 
     final newIndex = _getIndex(vueActive);
     if (newIndex != _currentIndex && _pageController.hasClients) {
+      if (provider.timerActif) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          provider.forcerEchecDefi();
+          provider.afficherNotification("Vous avez changé d'onglet !", type: "erreur");
+        });
+      }
       _currentIndex = newIndex;
       _pageController.animateToPage(
         newIndex,

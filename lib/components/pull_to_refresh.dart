@@ -98,8 +98,8 @@ class _MuseRefreshIndicatorState extends State<_MuseRefreshIndicator>
               turns: _rotationController,
               child: Image.asset(
                 'assets/images/actualisation.png',
-                width: (widget.pulledExtent * 0.5).clamp(24.0, 42.0),
-                height: (widget.pulledExtent * 0.5).clamp(24.0, 42.0),
+                width: (widget.pulledExtent * 0.8).clamp(32.0, 56.0),
+                height: (widget.pulledExtent * 0.8).clamp(32.0, 56.0),
                 color: accentColor,
               ),
             )
