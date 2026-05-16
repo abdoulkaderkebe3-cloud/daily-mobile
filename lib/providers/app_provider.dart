@@ -66,32 +66,17 @@ class AppProvider with ChangeNotifier {
     final savedUser = _prefs?.getString("utilisateur");
     if (savedUser != null) {
       final loginDateStr = _prefs?.getString("date_connexion");
-      bool isExpired = false;
       
-      if (loginDateStr != null) {
-        try {
-          final loginDate = DateTime.parse(loginDateStr);
-          if (DateTime.now().difference(loginDate).inDays >= 6) {
-            isExpired = true;
-          }
-        } catch (_) {}
-      } else {
+      if (loginDateStr == null) {
         _prefs?.setString("date_connexion", DateTime.now().toIso8601String());
       }
 
-      if (isExpired) {
-        _prefs?.remove("utilisateur");
-        _prefs?.remove("date_connexion");
-        ApiService.deconnexion();
+      try {
+        _donneesUtilisateur = jsonDecode(savedUser);
+        // Lancement du préchargement en arrière-plan
+        preChargerDonnees();
+      } catch (e) {
         _donneesUtilisateur = null;
-      } else {
-        try {
-          _donneesUtilisateur = jsonDecode(savedUser);
-          // Lancement du préchargement en arrière-plan
-          preChargerDonnees();
-        } catch (e) {
-          _donneesUtilisateur = null;
-        }
       }
     }
 
