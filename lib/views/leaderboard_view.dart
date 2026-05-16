@@ -54,11 +54,6 @@ class LeaderboardViewState extends State<LeaderboardView> with AutomaticKeepAliv
     try {
       final rep = await ApiService.obtenirUtilisateurs(page: _page, limite: limite)
           .timeout(const Duration(seconds: 30));
-          
-      if (isRefresh) {
-        // Garantir un temps minimum d'affichage de l'animation d'actualisation
-        await Future.delayed(const Duration(milliseconds: 600));
-      }
 
       final liste = rep['users'] ?? rep['data'] ?? [];
       if (mounted) {
@@ -114,7 +109,10 @@ class LeaderboardViewState extends State<LeaderboardView> with AutomaticKeepAliv
           child: CustomScrollView(
             physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
             slivers: [
-              MuseRefreshControl(onRefresh: () => _chargerClassement(isRefresh: true)),
+              MuseRefreshControl(onRefresh: () async {
+                _chargerClassement(isRefresh: true);
+                await Future.delayed(const Duration(seconds: 2));
+              }),
               SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
                 sliver: SliverToBoxAdapter(

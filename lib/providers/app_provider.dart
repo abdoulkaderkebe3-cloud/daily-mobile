@@ -65,12 +65,33 @@ class AppProvider with ChangeNotifier {
     
     final savedUser = _prefs?.getString("utilisateur");
     if (savedUser != null) {
-      try {
-        _donneesUtilisateur = jsonDecode(savedUser);
-        // Lancement du préchargement en arrière-plan
-        preChargerDonnees();
-      } catch (e) {
+      final loginDateStr = _prefs?.getString("date_connexion");
+      bool isExpired = false;
+      
+      if (loginDateStr != null) {
+        try {
+          final loginDate = DateTime.parse(loginDateStr);
+          if (DateTime.now().difference(loginDate).inDays >= 6) {
+            isExpired = true;
+          }
+        } catch (_) {}
+      } else {
+        _prefs?.setString("date_connexion", DateTime.now().toIso8601String());
+      }
+
+      if (isExpired) {
+        _prefs?.remove("utilisateur");
+        _prefs?.remove("date_connexion");
+        ApiService.deconnexion();
         _donneesUtilisateur = null;
+      } else {
+        try {
+          _donneesUtilisateur = jsonDecode(savedUser);
+          // Lancement du préchargement en arrière-plan
+          preChargerDonnees();
+        } catch (e) {
+          _donneesUtilisateur = null;
+        }
       }
     }
 
@@ -115,9 +136,13 @@ class AppProvider with ChangeNotifier {
 
     if (utilisateur != null) {
       _prefs?.setString("utilisateur", jsonEncode(utilisateur));
+      if (_prefs?.getString("date_connexion") == null) {
+        _prefs?.setString("date_connexion", DateTime.now().toIso8601String());
+      }
       preChargerDonnees();
     } else {
       _prefs?.remove("utilisateur");
+      _prefs?.remove("date_connexion");
     }
     notifyListeners();
   }

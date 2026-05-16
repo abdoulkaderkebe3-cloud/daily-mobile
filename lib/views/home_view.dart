@@ -67,11 +67,6 @@ class HomeViewState extends State<HomeView> with AutomaticKeepAliveClientMixin {
 
     try {
       final data = await ApiService.obtenirQuestionDuJour(userId.toString());
-      
-      if (isRefresh) {
-        // Garantir un temps minimum d'affichage de l'animation d'actualisation
-        await Future.delayed(const Duration(milliseconds: 600));
-      }
 
       provider.setCacheQuestion(data, today);
       _appliquerDonneesQuestion(data);
@@ -266,7 +261,10 @@ class HomeViewState extends State<HomeView> with AutomaticKeepAliveClientMixin {
     return CustomScrollView(
       physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
       slivers: [
-        MuseRefreshControl(onRefresh: () => _chargerQuestion(isRefresh: true)),
+        MuseRefreshControl(onRefresh: () async {
+          _chargerQuestion(isRefresh: true);
+          await Future.delayed(const Duration(seconds: 2));
+        }),
         SliverPadding(
           padding: const EdgeInsets.symmetric(vertical: 24.0),
           sliver: SliverList(
