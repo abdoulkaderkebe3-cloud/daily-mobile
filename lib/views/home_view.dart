@@ -10,6 +10,7 @@ import 'package:share_plus/share_plus.dart';
 import '../services/notification_service.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../components/pull_to_refresh.dart';
+import 'package:confetti/confetti.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -30,11 +31,19 @@ class HomeViewState extends State<HomeView> with AutomaticKeepAliveClientMixin {
   String _etat = "actif";
   bool _pretPourDefi = false;
   String _messageDejaJoue = "";
+  late ConfettiController _confettiController;
 
   @override
   void initState() {
     super.initState();
+    _confettiController = ConfettiController(duration: const Duration(seconds: 3));
     _chargerQuestion();
+  }
+
+  @override
+  void dispose() {
+    _confettiController.dispose();
+    super.dispose();
   }
 
   Future<void> _chargerQuestion({bool isRefresh = false}) async {
@@ -211,7 +220,10 @@ class HomeViewState extends State<HomeView> with AutomaticKeepAliveClientMixin {
         await prefs.setString("date_etat_$userId", today);
         provider.afficherNotification("Correct ! +${data['pointsEarned']} pts", type: "succes");
         NotificationService.programmerRappelQuotidien(demain: true);
-        if (mounted) setState(() => _etat = "succes");
+        if (mounted) {
+          setState(() => _etat = "succes");
+          _confettiController.play();
+        }
         
         // Refresh stats
         try {
@@ -258,9 +270,11 @@ class HomeViewState extends State<HomeView> with AutomaticKeepAliveClientMixin {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return CustomScrollView(
-      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-      slivers: [
+    return Stack(
+      children: [
+        CustomScrollView(
+          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+          slivers: [
         MuseRefreshControl(onRefresh: () async {
           _chargerQuestion(isRefresh: true);
           await Future.delayed(const Duration(seconds: 2));
@@ -317,6 +331,17 @@ class HomeViewState extends State<HomeView> with AutomaticKeepAliveClientMixin {
                   onPartager: _gererPartage,
                 ),
             ]),
+          ),
+        ),
+          ],
+        ),
+        Align(
+          alignment: Alignment.topCenter,
+          child: ConfettiWidget(
+            confettiController: _confettiController,
+            blastDirectionality: BlastDirectionality.explosive,
+            shouldLoop: false,
+            colors: const [Colors.orange, Colors.white, Colors.green],
           ),
         ),
       ],

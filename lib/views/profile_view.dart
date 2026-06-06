@@ -19,7 +19,8 @@ class ProfileView extends StatefulWidget {
   ProfileViewState createState() => ProfileViewState();
 }
 
-class ProfileViewState extends State<ProfileView> with AutomaticKeepAliveClientMixin {
+class ProfileViewState extends State<ProfileView>
+    with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
   bool _modeEdition = false;
@@ -39,11 +40,11 @@ class ProfileViewState extends State<ProfileView> with AutomaticKeepAliveClientM
     try {
       final userFull = await ApiService.obtenirUtilisateur(userId.toString());
       final stats = await ApiService.obtenirStatsUtilisateur(userId.toString());
-      
+
       final updatedData = Map<String, dynamic>.from(userData ?? {});
       if (userFull is Map<String, dynamic>) updatedData.addAll(userFull);
       if (stats is Map<String, dynamic>) updatedData.addAll(stats);
-      
+
       provider.setDonneesUtilisateur(updatedData);
     } catch (err) {
       debugPrint("Erreur refresh stats: $err");
@@ -55,10 +56,14 @@ class ProfileViewState extends State<ProfileView> with AutomaticKeepAliveClientM
 
     try {
       // Assuming ApiService has a method for this or using generic post
-      final res = await ApiService.creerQuestion({'code': code}); // Placeholder for code redemption
+      final res = await ApiService.creerQuestion(
+          {'code': code}); // Placeholder for code redemption
       provider.afficherNotification("Code valide !", type: "succes");
       if (res['user'] != null) {
-        provider.setDonneesUtilisateur({...provider.donneesUtilisateur!, 'total_score': res['user']['total_score']});
+        provider.setDonneesUtilisateur({
+          ...provider.donneesUtilisateur!,
+          'total_score': res['user']['total_score']
+        });
       }
     } catch (err) {
       provider.afficherNotification("Code invalide", type: "erreur");
@@ -77,9 +82,10 @@ class ProfileViewState extends State<ProfileView> with AutomaticKeepAliveClientM
     super.build(context);
     final provider = context.read<AppProvider>();
     final theme = Theme.of(context);
-    
+
     return CustomScrollView(
-      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+      physics:
+          const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
       slivers: [
         MuseRefreshControl(onRefresh: _refreshStats),
         SliverPadding(
@@ -90,9 +96,7 @@ class ProfileViewState extends State<ProfileView> with AutomaticKeepAliveClientM
                 modeEdition: _modeEdition,
                 onToggleEdition: (val) => setState(() => _modeEdition = val),
               ),
-              
               const SizedBox(height: 16),
-              
               if (!_modeEdition)
                 ZoneCadeaux(onUtiliserCode: _gererUtiliserCode)
               else ...[
@@ -100,14 +104,22 @@ class ProfileViewState extends State<ProfileView> with AutomaticKeepAliveClientM
                 const SizedBox(height: 16),
                 const CommunityFooter(),
               ],
-
               const SizedBox(height: 32),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildFooterLink(provider.t("lbl_liens_utiles"), "https://linktr.ee/VisoStudio.co", theme),
-                  Text(provider.t("lbl_et"), style: GoogleFonts.inter(fontSize: 12, color: theme.brightness == Brightness.light ? Colors.black : Colors.white)),
-                  _buildFooterLink(provider.t("lbl_conditions_utilisations"), "https://viso-studio.com", theme),
+                  _buildFooterLink(provider.t("lbl_liens_utiles"),
+                      "https://linktr.ee/VisoStudio.co", theme),
+                  Text(provider.t("lbl_et"),
+                      style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: theme.brightness == Brightness.light
+                              ? Colors.black
+                              : Colors.white)),
+                  _buildFooterLink(
+                      provider.t("lbl_conditions_utilisations"),
+                      "https://daily-hazel.vercel.app/conditions/condition.html",
+                      theme),
                 ],
               ),
               const SizedBox(height: 20),

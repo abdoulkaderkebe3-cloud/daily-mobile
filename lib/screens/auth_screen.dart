@@ -372,7 +372,7 @@ class AuthScreenState extends State<AuthScreen> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: GestureDetector(
-                          onTap: () => _lancerUrl("https://viso-studio.com"),
+                          onTap: () => _lancerUrl("https://daily-hazel.vercel.app/conditions/condition.html"),
                           child: RichText(
                             text: TextSpan(
                               style: GoogleFonts.inter(fontSize: 13, color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7)),
