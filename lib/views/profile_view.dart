@@ -118,7 +118,7 @@ class ProfileViewState extends State<ProfileView>
                               : Colors.white)),
                   _buildFooterLink(
                       provider.t("lbl_conditions_utilisations"),
-                      "https://daily-hazel.vercel.app/conditions/condition.html",
+                      "https://daily-muse.fun/conditions/condition.html",
                       theme),
                 ],
               ),

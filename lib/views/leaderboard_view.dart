@@ -5,7 +5,6 @@ import '../providers/app_provider.dart';
 import '../services/api_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../components/pull_to_refresh.dart';
 
@@ -22,7 +21,7 @@ class LeaderboardViewState extends State<LeaderboardView> with AutomaticKeepAliv
   static const int limite = 10;
   List<dynamic> _classement = [];
   bool _chargement = true;
-  bool _erreur = false;
+  String _typeErreur = "";
   int _page = 1;
 
   @override
@@ -33,22 +32,24 @@ class LeaderboardViewState extends State<LeaderboardView> with AutomaticKeepAliv
 
   Future<void> _chargerClassement({bool isRefresh = false}) async {
     final provider = context.read<AppProvider>();
-    
-    // Afficher le cache immédiatement si disponible
-    if (!isRefresh && provider.cacheClassement != null && _page == 1) {
+
+    // Toujours réinitialiser l'erreur dès qu'on tente un chargement
+    if (mounted) {
       setState(() {
-        _classement = provider.cacheClassement!;
-        _chargement = false;
-        _erreur = false;
+        _typeErreur = "";
+        if (!isRefresh) _chargement = true;
       });
-      // On ne fait PAS de return ici pour rafraîchir en arrière-plan
-    } else {
-      if (!isRefresh && mounted) {
+    }
+
+    // Afficher le cache immédiatement si disponible (premier chargement seulement)
+    if (!isRefresh && provider.cacheClassement != null && _page == 1) {
+      if (mounted) {
         setState(() {
-          _chargement = true;
-          _erreur = false;
+          _classement = provider.cacheClassement!;
+          _chargement = false;
         });
       }
+      // On ne fait PAS de return ici pour rafraîchir en arrière-plan
     }
 
     try {
@@ -59,13 +60,26 @@ class LeaderboardViewState extends State<LeaderboardView> with AutomaticKeepAliv
       if (mounted) {
         setState(() {
           _classement = liste;
+          _typeErreur = "";
           if (_page == 1) provider.setCacheClassement(liste);
           _chargement = false;
         });
       }
     } catch (e) {
-      if (mounted && _classement.isEmpty) {
-        setState(() => _erreur = true);
+      // Afficher l'erreur que le classement soit vide ou non (ex: après reconnexion)
+      if (mounted) {
+        setState(() {
+          if (e.toString().contains("SocketException") ||
+              e.toString().contains("Failed host lookup") ||
+              e.toString().contains("TimeoutException") ||
+              e.toString().contains("ClientException") ||
+              e.toString().contains("XMLHttpRequest error")) {
+            _typeErreur = "internet";
+          } else {
+            _typeErreur = "backend";
+          }
+          _chargement = false;
+        });
       }
     } finally {
       if (mounted) setState(() => _chargement = false);
@@ -110,8 +124,7 @@ class LeaderboardViewState extends State<LeaderboardView> with AutomaticKeepAliv
             physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
             slivers: [
               MuseRefreshControl(onRefresh: () async {
-                _chargerClassement(isRefresh: true);
-                await Future.delayed(const Duration(seconds: 2));
+                await _chargerClassement(isRefresh: true);
               }),
               SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
@@ -135,7 +148,7 @@ class LeaderboardViewState extends State<LeaderboardView> with AutomaticKeepAliv
           ),
         ),
         
-        if (!_erreur && (_classement.isNotEmpty || _page > 1))
+        if (_typeErreur.isEmpty && (_classement.isNotEmpty || _page > 1))
           _buildPagination(aPagePrecedente, aPageSuivante, theme, provider),
       ],
     );
@@ -146,7 +159,7 @@ class LeaderboardViewState extends State<LeaderboardView> with AutomaticKeepAliv
       return [const SliverFillRemaining(child: Center(child: CircularProgressIndicator(strokeWidth: 2)))];
     }
     
-    if (_erreur) {
+    if (_typeErreur.isNotEmpty) {
       return [
         SliverFillRemaining(
           hasScrollBody: false,
@@ -165,7 +178,7 @@ class LeaderboardViewState extends State<LeaderboardView> with AutomaticKeepAliv
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    provider.t("err_check_internet"), 
+                    _typeErreur == "internet" ? provider.t("err_check_internet") : provider.t("err_backend_unavailable"), 
                     style: GoogleFonts.inter(color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5)),
                     textAlign: TextAlign.center,
                   ),

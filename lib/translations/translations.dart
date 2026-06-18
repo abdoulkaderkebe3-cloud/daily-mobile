@@ -96,6 +96,7 @@ class Translations {
       // Ajouts Erreurs / Leaderboard
       'err_timeout': "Le chargement prend trop de temps",
       'err_check_internet': "Vérifiez votre connexion internet et réessayez.",
+      'err_backend_unavailable': "Le service est actuellement indisponible. Veuillez réessayer ultérieurement",
       'btn_retry': "RÉESSAYER",
       'msg_no_players': "Aucun joueur pour l'instant",
       'btn_prev': "Précédent",
@@ -203,6 +204,7 @@ class Translations {
       // Error / Leaderboard Additions
       'err_timeout': "Loading takes too long",
       'err_check_internet': "Check your internet connection and try again.",
+      'err_backend_unavailable': "The service is currently unavailable. Please try again later.",
       'btn_retry': "RETRY",
       'msg_no_players': "No players yet",
       'btn_prev': "Previous",

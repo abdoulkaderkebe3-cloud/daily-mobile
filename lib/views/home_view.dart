@@ -31,6 +31,7 @@ class HomeViewState extends State<HomeView> with AutomaticKeepAliveClientMixin {
   String _etat = "actif";
   bool _pretPourDefi = false;
   String _messageDejaJoue = "";
+  String _typeErreur = "";
   late ConfettiController _confettiController;
 
   @override
@@ -83,6 +84,11 @@ class HomeViewState extends State<HomeView> with AutomaticKeepAliveClientMixin {
       if (mounted) {
         setState(() {
           _etat = "erreur";
+          if (e.toString().contains("SocketException") || e.toString().contains("Failed host lookup") || e.toString().contains("TimeoutException") || e.toString().contains("ClientException") || e.toString().contains("XMLHttpRequest error")) {
+            _typeErreur = "internet";
+          } else {
+            _typeErreur = "backend";
+          }
         });
       }
     } finally {
@@ -276,8 +282,7 @@ class HomeViewState extends State<HomeView> with AutomaticKeepAliveClientMixin {
           physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
           slivers: [
         MuseRefreshControl(onRefresh: () async {
-          _chargerQuestion(isRefresh: true);
-          await Future.delayed(const Duration(seconds: 2));
+          await _chargerQuestion(isRefresh: true);
         }),
         SliverPadding(
           padding: const EdgeInsets.symmetric(vertical: 24.0),
@@ -364,7 +369,7 @@ class HomeViewState extends State<HomeView> with AutomaticKeepAliveClientMixin {
             ),
             const SizedBox(height: 8),
             Text(
-              provider.t("err_check_internet"), 
+              _typeErreur == "internet" ? provider.t("err_check_internet") : provider.t("err_backend_unavailable"), 
               style: GoogleFonts.inter(color: theme.textTheme.bodyMedium?.color?.withOpacity(0.5)),
               textAlign: TextAlign.center,
             ),

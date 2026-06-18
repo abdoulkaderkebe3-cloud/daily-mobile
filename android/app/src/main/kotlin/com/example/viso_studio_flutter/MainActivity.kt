@@ -1,4 +1,4 @@
-package com.example.viso_studio_flutter
+package com.dailymuse.app
 
 import io.flutter.embedding.android.FlutterActivity
 

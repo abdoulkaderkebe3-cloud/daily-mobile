@@ -8,8 +8,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:viso_studio_flutter/main.dart';
-
 void main() {
   testWidgets('Boilerplate test', (WidgetTester tester) async {
     // Boilerplate test removed because main app logic changed
