@@ -19,9 +19,13 @@ class _MuseLoadingIndicatorState extends State<MuseLoadingIndicator>
     super.initState();
     _rotationController = AnimationController(
       vsync: this,
+<<<<<<< HEAD
       duration: const Duration(
           milliseconds:
               600), // Vitesse de rotation (identique au pull-to-refresh)
+=======
+      duration: const Duration(milliseconds: 600), // Vitesse de rotation (identique au pull-to-refresh)
+>>>>>>> startAnimation
     )..repeat();
   }
 
