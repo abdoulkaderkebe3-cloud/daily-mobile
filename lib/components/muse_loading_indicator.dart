@@ -4,7 +4,7 @@ class MuseLoadingIndicator extends StatefulWidget {
   final double size;
   final Color? color;
 
-  const MuseLoadingIndicator({super.key, this.size = 40.0, this.color});
+  const MuseLoadingIndicator({super.key, this.size = 70.0, this.color});
 
   @override
   State<MuseLoadingIndicator> createState() => _MuseLoadingIndicatorState();
@@ -19,13 +19,9 @@ class _MuseLoadingIndicatorState extends State<MuseLoadingIndicator>
     super.initState();
     _rotationController = AnimationController(
       vsync: this,
-<<<<<<< HEAD
       duration: const Duration(
           milliseconds:
               600), // Vitesse de rotation (identique au pull-to-refresh)
-=======
-      duration: const Duration(milliseconds: 600), // Vitesse de rotation (identique au pull-to-refresh)
->>>>>>> startAnimation
     )..repeat();
   }
 
