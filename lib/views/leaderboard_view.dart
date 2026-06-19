@@ -56,6 +56,11 @@ class LeaderboardViewState extends State<LeaderboardView> with AutomaticKeepAliv
       final rep = await ApiService.obtenirUtilisateurs(page: _page, limite: limite)
           .timeout(const Duration(seconds: 30));
 
+      if (isRefresh) {
+        // Garantir un temps minimum d'affichage de l'animation d'actualisation
+        await Future.delayed(const Duration(milliseconds: 600));
+      }
+
       final liste = rep['users'] ?? rep['data'] ?? [];
       if (mounted) {
         setState(() {
@@ -169,10 +174,14 @@ class LeaderboardViewState extends State<LeaderboardView> with AutomaticKeepAliv
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(PhosphorIcons.wifiSlash(), size: 64, color: theme.primaryColor.withValues(alpha: 0.1)),
+                  Icon(
+                    _typeErreur == "internet" ? PhosphorIcons.wifiSlash() : PhosphorIcons.warningCircle(), 
+                    size: 64, 
+                    color: theme.primaryColor.withValues(alpha: 0.1)
+                  ),
                   const SizedBox(height: 24),
                   Text(
-                    provider.t("err_timeout"), 
+                    _typeErreur == "internet" ? provider.t("err_timeout") : provider.t("err_generique"), 
                     style: GoogleFonts.playfairDisplay(fontSize: 20, fontWeight: FontWeight.w700),
                     textAlign: TextAlign.center,
                   ),

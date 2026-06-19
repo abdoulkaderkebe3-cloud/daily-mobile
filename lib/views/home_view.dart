@@ -78,9 +78,21 @@ class HomeViewState extends State<HomeView> with AutomaticKeepAliveClientMixin {
     try {
       final data = await ApiService.obtenirQuestionDuJour(userId.toString());
 
+      if (isRefresh) {
+        // Garantir un temps minimum d'affichage de l'animation d'actualisation
+        await Future.delayed(const Duration(milliseconds: 600));
+      }
+
       provider.setCacheQuestion(data, today);
       _appliquerDonneesQuestion(data);
     } catch (e) {
+      if (e.toString().contains("401") || e.toString().contains("403")) {
+        // Session expirée ou invalide -> déconnexion
+        ApiService.deconnexion().then((_) {
+          if (mounted) provider.setDonneesUtilisateur(null);
+        });
+        return;
+      }
       if (mounted) {
         setState(() {
           _etat = "erreur";
@@ -360,10 +372,14 @@ class HomeViewState extends State<HomeView> with AutomaticKeepAliveClientMixin {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(PhosphorIcons.wifiSlash(), size: 64, color: theme.primaryColor.withOpacity(0.1)),
+            Icon(
+              _typeErreur == "internet" ? PhosphorIcons.wifiSlash() : PhosphorIcons.warningCircle(), 
+              size: 64, 
+              color: theme.primaryColor.withOpacity(0.1)
+            ),
             const SizedBox(height: 24),
             Text(
-              provider.t("err_timeout"), 
+              _typeErreur == "internet" ? provider.t("err_timeout") : provider.t("err_generique"), 
               style: GoogleFonts.playfairDisplay(fontSize: 20, fontWeight: FontWeight.w700),
               textAlign: TextAlign.center,
             ),
