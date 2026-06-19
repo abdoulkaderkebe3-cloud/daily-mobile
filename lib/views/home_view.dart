@@ -11,6 +11,7 @@ import '../services/notification_service.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../components/pull_to_refresh.dart';
 import 'package:confetti/confetti.dart';
+import '../components/muse_loading_indicator.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -329,7 +330,7 @@ class HomeViewState extends State<HomeView> with AutomaticKeepAliveClientMixin {
                 const Center(
                   child: Padding(
                     padding: EdgeInsets.all(60.0),
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: MuseLoadingIndicator(size: 40),
                   ),
                 )
               else if (_etat == "erreur")

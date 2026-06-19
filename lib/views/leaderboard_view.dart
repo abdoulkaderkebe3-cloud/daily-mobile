@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import '../components/pull_to_refresh.dart';
+import '../components/muse_loading_indicator.dart';
 
 class LeaderboardView extends StatefulWidget {
   const LeaderboardView({super.key});
@@ -161,7 +162,7 @@ class LeaderboardViewState extends State<LeaderboardView> with AutomaticKeepAliv
 
   List<Widget> _buildSlivers(ThemeData theme, AppProvider provider, int offsetRang, dynamic userId) {
     if (_chargement) {
-      return [const SliverFillRemaining(child: Center(child: CircularProgressIndicator(strokeWidth: 2)))];
+      return [const SliverFillRemaining(child: Center(child: MuseLoadingIndicator(size: 40)))];
     }
     
     if (_typeErreur.isNotEmpty) {
